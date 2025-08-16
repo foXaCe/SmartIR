@@ -4,13 +4,13 @@
   },
   "entity": {
     "climate": {
-      "default": "mdi:air-conditioner",
+      "default": "mdi:thermostat",
       "state": {
-        "off": "mdi:air-conditioner-off",
+        "off": "mdi:thermostat-off",
         "heat": "mdi:fire",
         "cool": "mdi:snowflake",
-        "heat_cool": "mdi:thermometer",
-        "auto": "mdi:thermometer-auto",
+        "heat_cool": "mdi:thermostat",
+        "auto": "mdi:thermostat-auto",
         "dry": "mdi:water-percent",
         "fan_only": "mdi:fan"
       },
@@ -76,7 +76,7 @@
   },
   "entity_component": {
     "smartir": {
-      "climate": "mdi:air-conditioner",
+      "climate": "mdi:thermostat",
       "fan": "mdi:fan",
       "media_player": "mdi:television",
       "light": "mdi:lightbulb"

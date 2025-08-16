@@ -187,7 +187,7 @@ class SmartIRClimate(ClimateEntity, RestoreEntity):
         self._on_by_remote = False
         
         # Set default icon attribute
-        self._attr_icon = "mdi:air-conditioner"
+        self._attr_icon = "mdi:thermostat"
 
         #Init the IR/RF controller
         self._controller = get_controller(
@@ -247,24 +247,24 @@ class SmartIRClimate(ClimateEntity, RestoreEntity):
     def icon(self):
         """Return the icon for the climate device based on current state."""
         if not hasattr(self, '_hvac_mode') or self._hvac_mode is None:
-            return "mdi:air-conditioner"
+            return "mdi:thermostat"
             
         if self._hvac_mode == HVACMode.OFF:
-            return "mdi:air-conditioner-off"
+            return "mdi:thermostat-off"
         elif self._hvac_mode == HVACMode.HEAT:
             return "mdi:fire"
         elif self._hvac_mode == HVACMode.COOL:
             return "mdi:snowflake"
         elif self._hvac_mode == HVACMode.HEAT_COOL:
-            return "mdi:thermometer"
+            return "mdi:thermostat"
         elif self._hvac_mode == HVACMode.AUTO:
-            return "mdi:thermometer-auto"
+            return "mdi:thermostat-auto"
         elif self._hvac_mode == HVACMode.DRY:
             return "mdi:water-percent"
         elif self._hvac_mode == HVACMode.FAN_ONLY:
             return "mdi:fan"
         else:
-            return "mdi:air-conditioner"
+            return "mdi:thermostat"
 
     @property
     def state(self):
