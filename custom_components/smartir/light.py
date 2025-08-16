@@ -276,6 +276,19 @@ class SmartIRLight(LightEntity, RestoreEntity):
         return self._brightness
 
     @property
+    def device_info(self):
+        """Return device information for this light entity."""
+        return {
+            "identifiers": {(DOMAIN, f"smartir_light_{self._device_code}")},
+            "name": f"{self._manufacturer} {self._supported_models[0] if self._supported_models else 'Light'}",
+            "manufacturer": self._manufacturer,
+            "model": ", ".join(self._supported_models) if self._supported_models else "Unknown",
+            "sw_version": f"Device Code: {self._device_code}",
+            "configuration_url": f"https://github.com/smartHomeHub/SmartIR/blob/master/codes/light/{self._device_code}.json",
+            "suggested_area": "Living Room"
+        }
+
+    @property
     def extra_state_attributes(self):
         """Platform specific attributes."""
         return {
