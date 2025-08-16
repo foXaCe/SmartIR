@@ -285,7 +285,8 @@ class SmartIRLight(LightEntity, RestoreEntity):
             "model": ", ".join(self._supported_models) if self._supported_models else "Unknown",
             "sw_version": f"Device Code: {self._device_code}",
             "configuration_url": f"https://github.com/smartHomeHub/SmartIR/blob/master/codes/light/{self._device_code}.json",
-            "suggested_area": "Living Room"
+            "suggested_area": "Living Room",
+            "via_device": (DOMAIN, "smartir_hub")
         }
 
     @property

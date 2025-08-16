@@ -150,6 +150,11 @@ class SmartIRClimate(ClimateEntity, RestoreEntity):
         self._min_temperature = device_data['minTemperature']
         self._max_temperature = device_data['maxTemperature']
         self._precision = device_data['precision']
+        
+        # Update hub registration with real manufacturer info
+        if "hub" in config:
+            hub = config["hub"]
+            hub.register_device(device_code, "climate", self._manufacturer)
 
         valid_hvac_modes = [x for x in device_data['operationModes'] if x in HVAC_MODES]
 
@@ -347,7 +352,8 @@ class SmartIRClimate(ClimateEntity, RestoreEntity):
             "model": ", ".join(self._supported_models) if self._supported_models else "Unknown",
             "sw_version": f"Device Code: {self._device_code}",
             "configuration_url": f"https://github.com/smartHomeHub/SmartIR/blob/master/codes/climate/{self._device_code}.json",
-            "suggested_area": "Living Room"
+            "suggested_area": "Living Room",
+            "via_device": (DOMAIN, "smartir_hub")
         }
 
     @property

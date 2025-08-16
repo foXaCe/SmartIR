@@ -12,6 +12,7 @@ COMPONENT_ABS_DIR = os.path.dirname(os.path.abspath(__file__))
 
 from .const import (
     DOMAIN, 
+    VERSION,
     CONF_CONTROLLER_TYPE, 
     CONF_DEVICE_TYPE,
     CONF_NAME,
@@ -23,6 +24,7 @@ from .const import (
     CONF_POWER_SENSOR,
     CONF_POWER_SENSOR_RESTORE_STATE
 )
+from .hub import SmartIRHub
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -35,16 +37,26 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up SmartIR from a config entry."""
     hass.data.setdefault(DOMAIN, {})
     
+    # Create or get the SmartIR Hub
+    if "hub" not in hass.data[DOMAIN]:
+        hub = SmartIRHub(hass, "smartir_hub")
+        hass.data[DOMAIN]["hub"] = hub
+        _LOGGER.info("SmartIR Hub created")
+    else:
+        hub = hass.data[DOMAIN]["hub"]
+    
     # Read with simple keys (not CONF_ constants)
     device_type = entry.data.get("device_type", "climate")
     controller_type = entry.data.get("controller", "broadlink")
+    device_code = entry.data.get("device_code")
+    device_name = entry.data.get("name", f"SmartIR {device_type.title()}")
     
     # Convert to format expected by platforms (with CONF_ keys)
     platform_config = {
         CONF_DEVICE_TYPE: entry.data.get("device_type"),
         CONF_CONTROLLER_TYPE: entry.data.get("controller"),
-        CONF_NAME: entry.data.get("name"),
-        CONF_DEVICE_CODE: entry.data.get("device_code"),
+        CONF_NAME: device_name,
+        CONF_DEVICE_CODE: device_code,
         CONF_CONTROLLER_DATA: entry.data.get("controller_data"),
     }
     
@@ -60,16 +72,29 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if "power_sensor_restore_state" in entry.data:
         platform_config[CONF_POWER_SENSOR_RESTORE_STATE] = entry.data["power_sensor_restore_state"]
     
+    # Add hub reference to config
+    platform_config["hub"] = hub
+    
     hass.data[DOMAIN][entry.entry_id] = platform_config
 
+    # Register device with the hub
+    hub.register_device(device_code, device_type, manufacturer="Unknown")
+
     _LOGGER.info(
-        "SmartIR configured: device_type=%s, controller_type=%s", 
+        "SmartIR configured: device_type=%s, controller_type=%s, registered with hub", 
         device_type, 
         controller_type
     )
     
     # Forward the setup to the platform
-    await hass.config_entries.async_forward_entry_setups(entry, [device_type])
+    platforms = [device_type]
+    
+    # Add sensor platform for hub status (only for the first device)
+    if len([k for k in hass.data[DOMAIN].keys() if k != "hub"]) == 1:
+        platforms.append("sensor")
+        _LOGGER.debug("Adding sensor platform for SmartIR Hub")
+    
+    await hass.config_entries.async_forward_entry_setups(entry, platforms)
     
     return True
 
@@ -77,10 +102,25 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
     device_type = entry.data.get("device_type", "climate")
+    device_code = entry.data.get("device_code")
     
-    unload_ok = await hass.config_entries.async_unload_platforms(entry, [device_type])
+    # Determine platforms to unload
+    platforms = [device_type]
+    
+    # Check if this is the last device (unload sensor platform too)
+    remaining_devices = len([k for k in hass.data[DOMAIN].keys() if k != "hub" and k != entry.entry_id])
+    if remaining_devices == 0:
+        platforms.append("sensor")
+        _LOGGER.debug("Removing sensor platform for SmartIR Hub")
+    
+    unload_ok = await hass.config_entries.async_unload_platforms(entry, platforms)
     
     if unload_ok:
+        # Unregister device from hub
+        if "hub" in hass.data[DOMAIN]:
+            hub = hass.data[DOMAIN]["hub"]
+            hub.unregister_device(device_code, device_type)
+            
         hass.data[DOMAIN].pop(entry.entry_id)
     
     return unload_ok

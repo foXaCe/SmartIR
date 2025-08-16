@@ -249,7 +249,8 @@ class SmartIRFan(FanEntity, RestoreEntity):
             "model": ", ".join(self._supported_models) if self._supported_models else "Unknown",
             "sw_version": f"Device Code: {self._device_code}",
             "configuration_url": f"https://github.com/smartHomeHub/SmartIR/blob/master/codes/fan/{self._device_code}.json",
-            "suggested_area": "Bedroom"
+            "suggested_area": "Bedroom",
+            "via_device": (DOMAIN, "smartir_hub")
         }
 
     @property
