@@ -24,7 +24,7 @@ from .const import (
     CONF_POWER_SENSOR,
     CONF_POWER_SENSOR_RESTORE_STATE
 )
-from .hub import SmartIRHub
+# from .hub import SmartIRHub  # Temporary disable
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -42,13 +42,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up SmartIR from a config entry."""
     hass.data.setdefault(DOMAIN, {})
     
-    # Create or get the SmartIR Hub
-    if "hub" not in hass.data[DOMAIN]:
-        hub = SmartIRHub(hass, "smartir_hub")
-        hass.data[DOMAIN]["hub"] = hub
-        _LOGGER.info("SmartIR Hub created")
-    else:
-        hub = hass.data[DOMAIN]["hub"]
+    # Create or get the SmartIR Hub - Temporary disabled
+    # if "hub" not in hass.data[DOMAIN]:
+    #     hub = SmartIRHub(hass, "smartir_hub")
+    #     hass.data[DOMAIN]["hub"] = hub
+    #     _LOGGER.info("SmartIR Hub created")
+    # else:
+    #     hub = hass.data[DOMAIN]["hub"]
+    hub = None  # Temporary
     
     # Use options if available, otherwise use data
     config_data = {**entry.data, **entry.options}
@@ -85,8 +86,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     
     hass.data[DOMAIN][entry.entry_id] = platform_config
 
-    # Register device with the hub
-    hub.register_device(device_code, device_type, manufacturer="Unknown")
+    # Register device with the hub - Temporary disabled
+    # hub.register_device(device_code, device_type, manufacturer="Unknown")
 
     _LOGGER.info(
         "SmartIR configured: device_type=%s, controller_type=%s, registered with hub", 
@@ -127,10 +128,10 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     unload_ok = await hass.config_entries.async_unload_platforms(entry, platforms)
     
     if unload_ok:
-        # Unregister device from hub
-        if "hub" in hass.data[DOMAIN]:
-            hub = hass.data[DOMAIN]["hub"]
-            hub.unregister_device(device_code, device_type)
+        # Unregister device from hub - Temporary disabled
+        # if "hub" in hass.data[DOMAIN]:
+        #     hub = hass.data[DOMAIN]["hub"]
+        #     hub.unregister_device(device_code, device_type)
             
         hass.data[DOMAIN].pop(entry.entry_id)
     
