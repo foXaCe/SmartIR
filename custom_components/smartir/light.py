@@ -193,6 +193,9 @@ class SmartIRLight(LightEntity, RestoreEntity):
         ):
             self._support_color_mode = ColorMode.ONOFF
 
+        # Set default icon attribute
+        self._attr_icon = "mdi:lightbulb"
+        
         # Init the IR/RF controller
         self._controller = get_controller(
             self.hass,
@@ -307,6 +310,8 @@ class SmartIRLight(LightEntity, RestoreEntity):
         if self._power != STATE_ON and not self._on_by_remote:
             self._power = STATE_ON
             did_something = True
+            # Update icon when state changes
+            self._attr_icon = self.icon
             await self.send_command(CMD_POWER_ON)
 
         if (
@@ -388,6 +393,8 @@ class SmartIRLight(LightEntity, RestoreEntity):
 
     async def async_turn_off(self):
         self._power = STATE_OFF
+        # Update icon when state changes
+        self._attr_icon = self.icon
         await self.send_command(CMD_POWER_OFF)
         self.async_write_ha_state()
 

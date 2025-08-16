@@ -139,6 +139,9 @@ class SmartIRFan(FanEntity, RestoreEntity):
 
         self._temp_lock = asyncio.Lock()
         self._on_by_remote = False
+        
+        # Set default icon attribute
+        self._attr_icon = "mdi:fan"
 
         #Init the IR/RF controller
         self._controller = get_controller(

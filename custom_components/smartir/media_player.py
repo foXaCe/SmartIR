@@ -156,6 +156,16 @@ class SmartIRMediaPlayer(MediaPlayerEntity, RestoreEntity):
                 self._sources_list.append(key)
 
         self._temp_lock = asyncio.Lock()
+        
+        # Set default icon attribute based on device class
+        if self._device_class == "tv":
+            self._attr_icon = "mdi:television"
+        elif self._device_class == "speaker":
+            self._attr_icon = "mdi:speaker"
+        elif self._device_class == "receiver":
+            self._attr_icon = "mdi:audio-video"
+        else:
+            self._attr_icon = "mdi:television"
 
         #Init the IR/RF controller
         self._controller = get_controller(

@@ -185,6 +185,9 @@ class SmartIRClimate(ClimateEntity, RestoreEntity):
 
         self._temp_lock = asyncio.Lock()
         self._on_by_remote = False
+        
+        # Set default icon attribute
+        self._attr_icon = "mdi:air-conditioner"
 
         #Init the IR/RF controller
         self._controller = get_controller(
@@ -243,6 +246,9 @@ class SmartIRClimate(ClimateEntity, RestoreEntity):
     @property
     def icon(self):
         """Return the icon for the climate device based on current state."""
+        if not hasattr(self, '_hvac_mode') or self._hvac_mode is None:
+            return "mdi:air-conditioner"
+            
         if self._hvac_mode == HVACMode.OFF:
             return "mdi:air-conditioner-off"
         elif self._hvac_mode == HVACMode.HEAT:
@@ -401,6 +407,9 @@ class SmartIRClimate(ClimateEntity, RestoreEntity):
         if not hvac_mode == HVACMode.OFF:
             self._last_on_operation = hvac_mode
 
+        # Update icon when mode changes
+        self._attr_icon = self.icon
+        
         await self.send_command()
         self.async_write_ha_state()
 
