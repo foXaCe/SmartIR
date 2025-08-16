@@ -1,138 +1,145 @@
-import aiofiles
-import aiohttp
-import asyncio
 import binascii
-from distutils.version import StrictVersion
-import json
 import logging
-import os.path
-import requests
 import struct
-import voluptuous as vol
+import os
 
-from aiohttp import ClientSession
-from homeassistant.const import (
-    ATTR_FRIENDLY_NAME, __version__ as current_ha_version)
-import homeassistant.helpers.config_validation as cv
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers.typing import ConfigType
+
+# Component absolute directory path for device codes
+COMPONENT_ABS_DIR = os.path.dirname(os.path.abspath(__file__))
+
+from .const import (
+    DOMAIN, 
+    CONF_CONTROLLER_TYPE, 
+    CONF_DEVICE_TYPE,
+    CONF_NAME,
+    CONF_DEVICE_CODE,
+    CONF_CONTROLLER_DATA,
+    CONF_DELAY,
+    CONF_TEMPERATURE_SENSOR,
+    CONF_HUMIDITY_SENSOR,
+    CONF_POWER_SENSOR,
+    CONF_POWER_SENSOR_RESTORE_STATE
+)
 
 _LOGGER = logging.getLogger(__name__)
 
-DOMAIN = 'smartir'
-VERSION = '1.18.1'
-MANIFEST_URL = (
-    "https://raw.githubusercontent.com/"
-    "smartHomeHub/SmartIR/{}/"
-    "custom_components/smartir/manifest.json")
-REMOTE_BASE_URL = (
-    "https://raw.githubusercontent.com/"
-    "smartHomeHub/SmartIR/{}/"
-    "custom_components/smartir/")
-COMPONENT_ABS_DIR = os.path.dirname(
-    os.path.abspath(__file__))
-
-CONF_CHECK_UPDATES = 'check_updates'
-CONF_UPDATE_BRANCH = 'update_branch'
-
-CONFIG_SCHEMA = vol.Schema({
-    DOMAIN: vol.Schema({
-        vol.Optional(CONF_CHECK_UPDATES, default=True): cv.boolean,
-        vol.Optional(CONF_UPDATE_BRANCH, default='master'): vol.In(
-            ['master', 'rc'])
-    })
-}, extra=vol.ALLOW_EXTRA)
-
-async def async_setup(hass, config):
-    """Set up the SmartIR component."""
-    conf = config.get(DOMAIN)
-
-    if conf is None:
-        return True
-
-    check_updates = conf[CONF_CHECK_UPDATES]
-    update_branch = conf[CONF_UPDATE_BRANCH]
-
-    async def _check_updates(service):
-        await _update(hass, update_branch)
-
-    async def _update_component(service):
-        await _update(hass, update_branch, True)
-
-    hass.services.async_register(DOMAIN, 'check_updates', _check_updates)
-    hass.services.async_register(DOMAIN, 'update_component', _update_component)
-
-    if check_updates:
-        await _update(hass, update_branch, False, False)
-
+async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
+    """Set up the SmartIR component from YAML configuration (deprecated)."""
     return True
 
-async def _update(hass, branch, do_update=False, notify_if_latest=True):
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(MANIFEST_URL.format(branch)) as response:
-                if response.status == 200:
-                    
-                    data = await response.json(content_type='text/plain')
-                    min_ha_version = data['homeassistant']
-                    last_version = data['updater']['version']
-                    release_notes = data['updater']['releaseNotes']
 
-                    if StrictVersion(last_version) <= StrictVersion(VERSION):
-                        if notify_if_latest:
-                            hass.components.persistent_notification.async_create(
-                                "You're already using the latest version!", 
-                                title='SmartIR')
-                        return
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Set up SmartIR from a config entry."""
+    hass.data.setdefault(DOMAIN, {})
+    
+    # Read with simple keys (not CONF_ constants)
+    device_type = entry.data.get("device_type", "climate")
+    controller_type = entry.data.get("controller", "broadlink")
+    
+    # Convert to format expected by platforms (with CONF_ keys)
+    platform_config = {
+        CONF_DEVICE_TYPE: entry.data.get("device_type"),
+        CONF_CONTROLLER_TYPE: entry.data.get("controller"),
+        CONF_NAME: entry.data.get("name"),
+        CONF_DEVICE_CODE: entry.data.get("device_code"),
+        CONF_CONTROLLER_DATA: entry.data.get("controller_data"),
+    }
+    
+    # Add optional fields
+    if "delay" in entry.data:
+        platform_config[CONF_DELAY] = entry.data["delay"]
+    if "temperature_sensor" in entry.data:
+        platform_config[CONF_TEMPERATURE_SENSOR] = entry.data["temperature_sensor"]
+    if "humidity_sensor" in entry.data:
+        platform_config[CONF_HUMIDITY_SENSOR] = entry.data["humidity_sensor"]
+    if "power_sensor" in entry.data:
+        platform_config[CONF_POWER_SENSOR] = entry.data["power_sensor"]
+    if "power_sensor_restore_state" in entry.data:
+        platform_config[CONF_POWER_SENSOR_RESTORE_STATE] = entry.data["power_sensor_restore_state"]
+    
+    hass.data[DOMAIN][entry.entry_id] = platform_config
 
-                    if StrictVersion(current_ha_version) < StrictVersion(min_ha_version):
-                        hass.components.persistent_notification.async_create(
-                            "There is a new version of SmartIR integration, but it is **incompatible** "
-                            "with your system. Please first update Home Assistant.", title='SmartIR')
-                        return
+    _LOGGER.info(
+        "SmartIR configured: device_type=%s, controller_type=%s", 
+        device_type, 
+        controller_type
+    )
+    
+    # Forward the setup to the platform
+    await hass.config_entries.async_forward_entry_setups(entry, [device_type])
+    
+    return True
 
-                    if do_update is False:
-                        hass.components.persistent_notification.async_create(
-                            "A new version of SmartIR integration is available ({}). "
-                            "Call the ``smartir.update_component`` service to update "
-                            "the integration. \n\n **Release notes:** \n{}"
-                            .format(last_version, release_notes), title='SmartIR')
-                        return
 
-                    # Begin update
-                    files = data['updater']['files']
-                    has_errors = False
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Unload a config entry."""
+    device_type = entry.data.get("device_type", "climate")
+    
+    unload_ok = await hass.config_entries.async_unload_platforms(entry, [device_type])
+    
+    if unload_ok:
+        hass.data[DOMAIN].pop(entry.entry_id)
+    
+    return unload_ok
 
-                    for file in files:
-                        try:
-                            source = REMOTE_BASE_URL.format(branch) + file
-                            dest = os.path.join(COMPONENT_ABS_DIR, file)
-                            os.makedirs(os.path.dirname(dest), exist_ok=True)
-                            await Helper.downloader(source, dest)
-                        except Exception:
-                            has_errors = True
-                            _LOGGER.error("Error updating %s. Please update the file manually.", file)
 
-                    if has_errors:
-                        hass.components.persistent_notification.async_create(
-                            "There was an error updating one or more files of SmartIR. "
-                            "Please check the logs for more information.", title='SmartIR')
-                    else:
-                        hass.components.persistent_notification.async_create(
-                            "Successfully updated to {}. Please restart Home Assistant."
-                            .format(last_version), title='SmartIR')
-    except Exception:
-       _LOGGER.error("An error occurred while checking for updates.")
+async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Reload config entry."""
+    await async_unload_entry(hass, entry)
+    await async_setup_entry(hass, entry)
+
 
 class Helper():
+    """Helper class for IR code conversion."""
+
     @staticmethod
-    async def downloader(source, dest):
-        async with aiohttp.ClientSession() as session:
-            async with session.get(source) as response:
-                if response.status == 200:
-                    async with aiofiles.open(dest, mode='wb') as f:
-                        await f.write(await response.read())
-                else:
-                    raise Exception("File not found")
+    async def downloader(url, dest_path):
+        """Download a file from URL to destination path."""
+        import aiohttp
+        import aiofiles
+        
+        _LOGGER.info(f"Starting download: {url} -> {dest_path}")
+        
+        # Ensure directory exists
+        dest_dir = os.path.dirname(dest_path)
+        _LOGGER.debug(f"Creating directory: {dest_dir}")
+        os.makedirs(dest_dir, exist_ok=True)
+        
+        try:
+            _LOGGER.debug(f"Opening HTTP session for: {url}")
+            async with aiohttp.ClientSession() as session:
+                _LOGGER.debug(f"Making GET request to: {url}")
+                async with session.get(url) as response:
+                    _LOGGER.info(f"HTTP response status: {response.status} for {url}")
+                    if response.status == 200:
+                        _LOGGER.debug(f"Opening file for writing: {dest_path}")
+                        async with aiofiles.open(dest_path, 'wb') as f:
+                            total_bytes = 0
+                            async for chunk in response.content.iter_chunked(8192):
+                                await f.write(chunk)
+                                total_bytes += len(chunk)
+                        _LOGGER.info(f"Successfully downloaded {url} to {dest_path} ({total_bytes} bytes)")
+                        
+                        # Verify file was actually written
+                        if os.path.exists(dest_path):
+                            file_size = os.path.getsize(dest_path)
+                            _LOGGER.info(f"File verification: {dest_path} exists with {file_size} bytes")
+                        else:
+                            _LOGGER.error(f"File verification failed: {dest_path} does not exist after download")
+                            raise FileNotFoundError(f"Downloaded file not found: {dest_path}")
+                    else:
+                        _LOGGER.error(f"HTTP error {response.status} downloading {url}")
+                        raise aiohttp.ClientResponseError(
+                            request_info=response.request_info,
+                            history=response.history,
+                            status=response.status
+                        )
+        except Exception as e:
+            _LOGGER.error(f"Download failed for {url}: {type(e).__name__}: {e}")
+            raise
 
     @staticmethod
     def pronto2lirc(pronto):

@@ -24,6 +24,7 @@ import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.restore_state import RestoreEntity
 from . import COMPONENT_ABS_DIR, Helper
 from .controller import get_controller
+from .const import DOMAIN, CONF_CONTROLLER_TYPE, CONTROLLER_TYPES
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -56,6 +57,12 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
 )
 
 
+async def async_setup_entry(hass, entry, async_add_entities):
+    """Set up SmartIR light from a config entry."""
+    from .helpers import async_setup_entry_platform
+    await async_setup_entry_platform(hass, entry, async_add_entities, async_setup_platform)
+
+
 async def async_setup_platform(
     hass,
     config,
@@ -68,7 +75,7 @@ async def async_setup_platform(
     device_files_absdir = os.path.join(COMPONENT_ABS_DIR, device_files_subdir)
 
     if not os.path.isdir(device_files_absdir):
-        os.makedirs(device_files_absdir)
+        os.makedirs(device_files_absdir, exist_ok=True)
 
     device_json_filename = str(device_code) + ".json"
     device_json_path = os.path.join(device_files_absdir, device_json_filename)
@@ -109,6 +116,12 @@ async def async_setup_platform(
         _LOGGER.error("The device JSON file is invalid")
         return
 
+    # Map controller type from config entry to the format expected by controller.py
+    controller_type = config.get(CONF_CONTROLLER_TYPE)
+    if controller_type and controller_type in CONTROLLER_TYPES:
+        # Override the controller from JSON with the one from config entry
+        device_data['supportedController'] = CONTROLLER_TYPES[controller_type]
+    
     async_add_entities([SmartIRLight(hass, config, device_data)])
 
 
