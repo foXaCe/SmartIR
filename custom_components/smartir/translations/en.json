@@ -80,5 +80,23 @@
       "invalid_service_name": "Controller data must be a valid service name",
       "invalid_entity": "The specified entity is not valid"
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Modify SmartIR Configuration",
+        "description": "Modify your SmartIR device settings.\n\n**Need help finding your device code?** [Browse available device codes here]({device_code_help_url})",
+        "data": {
+          "name": "Device Name",
+          "device_code": "Device Code",
+          "controller_data": "Controller",
+          "delay": "Command Delay (seconds)",
+          "temperature_sensor": "Temperature Sensor",
+          "humidity_sensor": "Humidity Sensor",
+          "power_sensor": "Power Sensor",
+          "power_sensor_restore_state": "Restore state based on power sensor"
+        }
+      }
+    }
   }
 }

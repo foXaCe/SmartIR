@@ -33,6 +33,11 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     return True
 
 
+async def async_update_options(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Update options."""
+    await hass.config_entries.async_reload(entry.entry_id)
+
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up SmartIR from a config entry."""
     hass.data.setdefault(DOMAIN, {})
@@ -45,32 +50,35 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     else:
         hub = hass.data[DOMAIN]["hub"]
     
+    # Use options if available, otherwise use data
+    config_data = {**entry.data, **entry.options}
+    
     # Read with simple keys (not CONF_ constants)
-    device_type = entry.data.get("device_type", "climate")
-    controller_type = entry.data.get("controller", "broadlink")
-    device_code = entry.data.get("device_code")
-    device_name = entry.data.get("name", f"SmartIR {device_type.title()}")
+    device_type = config_data.get("device_type", "climate")
+    controller_type = config_data.get("controller", "broadlink")
+    device_code = config_data.get("device_code")
+    device_name = config_data.get("name", f"SmartIR {device_type.title()}")
     
     # Convert to format expected by platforms (with CONF_ keys)
     platform_config = {
-        CONF_DEVICE_TYPE: entry.data.get("device_type"),
-        CONF_CONTROLLER_TYPE: entry.data.get("controller"),
+        CONF_DEVICE_TYPE: config_data.get("device_type"),
+        CONF_CONTROLLER_TYPE: config_data.get("controller"),
         CONF_NAME: device_name,
         CONF_DEVICE_CODE: device_code,
-        CONF_CONTROLLER_DATA: entry.data.get("controller_data"),
+        CONF_CONTROLLER_DATA: config_data.get("controller_data"),
     }
     
     # Add optional fields
-    if "delay" in entry.data:
-        platform_config[CONF_DELAY] = entry.data["delay"]
-    if "temperature_sensor" in entry.data:
-        platform_config[CONF_TEMPERATURE_SENSOR] = entry.data["temperature_sensor"]
-    if "humidity_sensor" in entry.data:
-        platform_config[CONF_HUMIDITY_SENSOR] = entry.data["humidity_sensor"]
-    if "power_sensor" in entry.data:
-        platform_config[CONF_POWER_SENSOR] = entry.data["power_sensor"]
-    if "power_sensor_restore_state" in entry.data:
-        platform_config[CONF_POWER_SENSOR_RESTORE_STATE] = entry.data["power_sensor_restore_state"]
+    if "delay" in config_data:
+        platform_config[CONF_DELAY] = config_data["delay"]
+    if "temperature_sensor" in config_data:
+        platform_config[CONF_TEMPERATURE_SENSOR] = config_data["temperature_sensor"]
+    if "humidity_sensor" in config_data:
+        platform_config[CONF_HUMIDITY_SENSOR] = config_data["humidity_sensor"]
+    if "power_sensor" in config_data:
+        platform_config[CONF_POWER_SENSOR] = config_data["power_sensor"]
+    if "power_sensor_restore_state" in config_data:
+        platform_config[CONF_POWER_SENSOR_RESTORE_STATE] = config_data["power_sensor_restore_state"]
     
     # Add hub reference to config
     platform_config["hub"] = hub
@@ -95,6 +103,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         _LOGGER.debug("Adding sensor platform for SmartIR Hub")
     
     await hass.config_entries.async_forward_entry_setups(entry, platforms)
+    
+    # Listen for options updates
+    entry.async_on_unload(entry.add_update_listener(async_update_options))
     
     return True
 
