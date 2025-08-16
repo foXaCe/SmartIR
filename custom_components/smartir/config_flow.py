@@ -252,53 +252,80 @@ class SmartIROptionsFlow(config_entries.OptionsFlow):
         
         # Build schema based on current configuration and device type
         schema_dict = {
-            vol.Optional("name", default=current_config.get("name", "")): str,
             vol.Optional("device_code", default=current_config.get("device_code", 1)): vol.All(int, vol.Range(min=1)),
-            vol.Optional("controller_data", default=current_config.get("controller_data", "")): selector.EntitySelector(
+            vol.Optional("delay", default=current_config.get("delay", 0.5)): vol.All(vol.Coerce(float), vol.Range(min=0.1, max=10.0)),
+        }
+        
+        # Handle name separately to allow empty values
+        if current_config.get("name"):
+            schema_dict[vol.Optional("name", default=current_config.get("name"))] = str
+        else:
+            schema_dict[vol.Optional("name")] = str
+        
+        # Handle controller_data separately to avoid empty string default
+        if current_config.get("controller_data"):
+            schema_dict[vol.Optional("controller_data", default=current_config.get("controller_data"))] = selector.EntitySelector(
                 selector.EntitySelectorConfig(
                     domain="remote",
                     multiple=False
                 )
-            ),
-            vol.Optional("delay", default=current_config.get("delay", 0.5)): vol.All(vol.Coerce(float), vol.Range(min=0.1, max=10.0)),
-        }
+            )
+        else:
+            schema_dict[vol.Optional("controller_data")] = selector.EntitySelector(
+                selector.EntitySelectorConfig(
+                    domain="remote",
+                    multiple=False
+                )
+            )
 
         # Add device-specific options
         if device_type == "climate":
-            schema_dict.update({
-                vol.Optional("temperature_sensor", default=current_config.get("temperature_sensor", "")): selector.EntitySelector(
-                    selector.EntitySelectorConfig(
-                        domain="sensor",
-                        device_class="temperature",
-                        multiple=False
-                    )
-                ),
-                vol.Optional("humidity_sensor", default=current_config.get("humidity_sensor", "")): selector.EntitySelector(
-                    selector.EntitySelectorConfig(
-                        domain="sensor", 
-                        device_class="humidity",
-                        multiple=False
-                    )
-                ),
-                vol.Optional("power_sensor", default=current_config.get("power_sensor", "")): selector.EntitySelector(
-                    selector.EntitySelectorConfig(
-                        domain="sensor",
-                        device_class="power",
-                        multiple=False
-                    )
-                ),
-                vol.Optional("power_sensor_restore_state", default=current_config.get("power_sensor_restore_state", False)): bool,
-            })
+            # Only add default if entity exists in current config
+            temp_sensor_config = {
+                "domain": "sensor",
+                "device_class": "temperature",
+                "multiple": False
+            }
+            humidity_sensor_config = {
+                "domain": "sensor", 
+                "device_class": "humidity",
+                "multiple": False
+            }
+            power_sensor_config = {
+                "domain": "sensor",
+                "device_class": "power",
+                "multiple": False
+            }
+            
+            # Build the schema dynamically based on existing values
+            if current_config.get("temperature_sensor"):
+                schema_dict[vol.Optional("temperature_sensor", default=current_config.get("temperature_sensor"))] = selector.EntitySelector(selector.EntitySelectorConfig(**temp_sensor_config))
+            else:
+                schema_dict[vol.Optional("temperature_sensor")] = selector.EntitySelector(selector.EntitySelectorConfig(**temp_sensor_config))
+                
+            if current_config.get("humidity_sensor"):
+                schema_dict[vol.Optional("humidity_sensor", default=current_config.get("humidity_sensor"))] = selector.EntitySelector(selector.EntitySelectorConfig(**humidity_sensor_config))
+            else:
+                schema_dict[vol.Optional("humidity_sensor")] = selector.EntitySelector(selector.EntitySelectorConfig(**humidity_sensor_config))
+                
+            if current_config.get("power_sensor"):
+                schema_dict[vol.Optional("power_sensor", default=current_config.get("power_sensor"))] = selector.EntitySelector(selector.EntitySelectorConfig(**power_sensor_config))
+            else:
+                schema_dict[vol.Optional("power_sensor")] = selector.EntitySelector(selector.EntitySelectorConfig(**power_sensor_config))
+                
+            schema_dict[vol.Optional("power_sensor_restore_state", default=current_config.get("power_sensor_restore_state", False))] = bool
+            
         elif device_type in ["fan", "light", "media_player"]:
-            schema_dict.update({
-                vol.Optional("power_sensor", default=current_config.get("power_sensor", "")): selector.EntitySelector(
-                    selector.EntitySelectorConfig(
-                        domain="sensor",
-                        device_class="power", 
-                        multiple=False
-                    )
-                ),
-            })
+            power_sensor_config = {
+                "domain": "sensor",
+                "device_class": "power", 
+                "multiple": False
+            }
+            
+            if current_config.get("power_sensor"):
+                schema_dict[vol.Optional("power_sensor", default=current_config.get("power_sensor"))] = selector.EntitySelector(selector.EntitySelectorConfig(**power_sensor_config))
+            else:
+                schema_dict[vol.Optional("power_sensor")] = selector.EntitySelector(selector.EntitySelectorConfig(**power_sensor_config))
 
         device_code_help_url = f"https://github.com/smartHomeHub/SmartIR/tree/master/codes/{device_type}"
 
