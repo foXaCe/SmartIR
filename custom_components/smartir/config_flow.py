@@ -20,6 +20,7 @@ class SmartIRConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for SmartIR."""
 
     VERSION = 1
+    CONNECTION_CLASS = config_entries.CONN_CLASS_LOCAL_PUSH
     
     @staticmethod
     @callback
