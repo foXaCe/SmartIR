@@ -236,6 +236,26 @@ class SmartIRClimate(ClimateEntity, RestoreEntity):
         return self._name
 
     @property
+    def icon(self):
+        """Return the icon for the climate device based on current state."""
+        if self._hvac_mode == HVACMode.OFF:
+            return "mdi:air-conditioner-off"
+        elif self._hvac_mode == HVACMode.HEAT:
+            return "mdi:fire"
+        elif self._hvac_mode == HVACMode.COOL:
+            return "mdi:snowflake"
+        elif self._hvac_mode == HVACMode.HEAT_COOL:
+            return "mdi:thermometer"
+        elif self._hvac_mode == HVACMode.AUTO:
+            return "mdi:thermometer-auto"
+        elif self._hvac_mode == HVACMode.DRY:
+            return "mdi:water-percent"
+        elif self._hvac_mode == HVACMode.FAN_ONLY:
+            return "mdi:fan"
+        else:
+            return "mdi:air-conditioner"
+
+    @property
     def state(self):
         """Return the current state."""
         if self.hvac_mode != HVACMode.OFF:

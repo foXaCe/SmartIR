@@ -195,6 +195,27 @@ class SmartIRMediaPlayer(MediaPlayerEntity, RestoreEntity):
         return self._device_class
 
     @property
+    def icon(self):
+        """Return the icon for the media player based on device class and state."""
+        # Base icon on device class
+        if self._device_class == "tv":
+            base_icon = "television"
+        elif self._device_class == "speaker":
+            base_icon = "speaker"
+        elif self._device_class == "receiver":
+            base_icon = "audio-video"
+        else:
+            base_icon = "television"
+        
+        # Modify based on state
+        if self._state == STATE_OFF:
+            return f"mdi:{base_icon}-off" if base_icon == "television" else f"mdi:{base_icon}"
+        elif self._state == STATE_ON:
+            return f"mdi:{base_icon}"
+        else:
+            return f"mdi:{base_icon}"
+
+    @property
     def state(self):
         """Return the state of the player."""
         return self._state

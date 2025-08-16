@@ -230,6 +230,21 @@ class SmartIRLight(LightEntity, RestoreEntity):
         return self._name
 
     @property
+    def icon(self):
+        """Return the icon for the light based on current state and mode."""
+        if self.is_on:
+            if self._support_color_mode == ColorMode.COLOR_TEMP:
+                return "mdi:lightbulb-on"
+            elif self._support_color_mode == ColorMode.BRIGHTNESS:
+                if self._brightness and self._brightness == 1:  # Night light
+                    return "mdi:lightbulb-night"
+                return "mdi:brightness-6"
+            else:
+                return "mdi:lightbulb-on"
+        else:
+            return "mdi:lightbulb-off"
+
+    @property
     def supported_color_modes(self):
         """Return the list of supported color modes."""
         return [self._support_color_mode]

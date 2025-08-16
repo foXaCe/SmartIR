@@ -182,6 +182,23 @@ class SmartIRFan(FanEntity, RestoreEntity):
         return self._name
 
     @property
+    def icon(self):
+        """Return the icon for the fan based on current state."""
+        if self.state == STATE_ON:
+            if self._oscillating:
+                return "mdi:rotate-360"
+            elif hasattr(self, '_preset_mode') and self._preset_mode:
+                if self._preset_mode.lower() == "sleep":
+                    return "mdi:sleep"
+                elif self._preset_mode.lower() == "nature":
+                    return "mdi:leaf"
+                elif self._preset_mode.lower() == "auto":
+                    return "mdi:fan-auto"
+            return "mdi:fan"
+        else:
+            return "mdi:fan-off"
+
+    @property
     def state(self):
         """Return the current state."""
         if (self._on_by_remote or \
