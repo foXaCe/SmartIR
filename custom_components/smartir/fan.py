@@ -246,14 +246,14 @@ class SmartIRFan(FanEntity, RestoreEntity):
     def device_info(self):
         """Return device information for this fan entity."""
         return {
-            "identifiers": {(DOMAIN, f"smartir_fan_{self._device_code}")},
-            "name": f"{self._manufacturer} {self._supported_models[0] if self._supported_models else 'Fan'}",
+            "identifiers": {(DOMAIN, self._unique_id or f"smartir_fan_{self._device_code}")},
+            "name": self._name,
             "manufacturer": self._manufacturer,
             "model": ", ".join(self._supported_models) if self._supported_models else "Unknown",
             "sw_version": f"Device Code: {self._device_code}",
             "configuration_url": f"https://github.com/smartHomeHub/SmartIR/blob/master/codes/fan/{self._device_code}.json",
             "suggested_area": "Bedroom",
-            "via_device": (DOMAIN, "smartir_hub")
+            # "via_device": (DOMAIN, "smartir_hub")  # Temporary disabled
         }
 
     @property

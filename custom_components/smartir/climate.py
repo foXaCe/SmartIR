@@ -352,8 +352,8 @@ class SmartIRClimate(ClimateEntity, RestoreEntity):
     def device_info(self):
         """Return device information for this climate entity."""
         return {
-            "identifiers": {(DOMAIN, f"smartir_climate_{self._device_code}")},
-            "name": f"{self._manufacturer} {self._supported_models[0] if self._supported_models else 'Climate'}",
+            "identifiers": {(DOMAIN, self._unique_id or f"smartir_climate_{self._device_code}")},
+            "name": self._name,
             "manufacturer": self._manufacturer,
             "model": ", ".join(self._supported_models) if self._supported_models else "Unknown",
             "sw_version": f"Device Code: {self._device_code}",

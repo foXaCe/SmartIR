@@ -41,22 +41,9 @@
     "abort": {
       "single_instance_allowed": "Une seule instance est autorisée."
     },
-    "options": {
-      "device_type": {
-        "climate": "Climatisation (Climatiseur)",
-        "fan": "Ventilateur",
-        "media_player": "Lecteur multimédia (TV/Audio)",
-        "light": "Éclairage"
-      },
-      "controller": {
-        "broadlink": "Broadlink",
-        "xiaomi": "Télécommande IR Xiaomi (ChuangmiIr)",
-        "lookin": "Télécommande LOOK.in",
-        "esphome": "Service défini par l'utilisateur ESPHome pour transmetteur distant",
-        "mqtt": "Service de publication MQTT"
-      }
-    },
     "error": {
+      "device_code_required": "Le code de l'appareil est obligatoire. Veuillez entrer un code valide.",
+      "device_code_not_found": "Le code d'appareil {device_code} n'a pas été trouvé. Veuillez vérifier les codes disponibles via le lien d'aide ci-dessus.",
       "positive_number_required": "Le code de l'appareil doit être un nombre positif",
       "invalid_remote_entity": "Les données du contrôleur doivent être une entité télécommande (ex: remote.bedroom_remote)",
       "entity_not_found": "L'entité spécifiée n'a pas été trouvée", 
@@ -81,6 +68,25 @@
           "power_sensor": "Capteur d'alimentation",
           "power_sensor_restore_state": "Restaurer l'état basé sur le capteur d'alimentation"
         }
+      }
+    }
+  },
+  "selector": {
+    "device_type": {
+      "options": {
+        "climate": "Climatisation (Climatiseur)",
+        "fan": "Ventilateur",
+        "media_player": "Lecteur multimédia (TV/Audio)",
+        "light": "Éclairage"
+      }
+    },
+    "controller": {
+      "options": {
+        "broadlink": "Broadlink",
+        "xiaomi": "Télécommande IR Xiaomi (ChuangmiIr)",
+        "lookin": "Télécommande LOOK.in",
+        "esphome": "Service défini par l'utilisateur ESPHome pour transmetteur distant",
+        "mqtt": "Service de publication MQTT"
       }
     }
   }

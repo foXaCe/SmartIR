@@ -56,22 +56,9 @@
     "abort": {
       "single_instance_allowed": "Only a single instance is allowed."
     },
-    "options": {
-      "device_type": {
-        "climate": "Climate (Air Conditioner)",
-        "fan": "Fan",
-        "media_player": "Media Player (TV/Audio)",
-        "light": "Light"
-      },
-      "controller": {
-        "broadlink": "Broadlink",
-        "xiaomi": "Xiaomi IR Remote (ChuangmiIr)",
-        "lookin": "LOOK.in Remote",
-        "esphome": "ESPHome User-defined service for remote transmitter",
-        "mqtt": "MQTT Publish service"
-      }
-    },
     "error": {
+      "device_code_required": "Device code is required. Please enter a valid device code.",
+      "device_code_not_found": "Device code {device_code} not found. Please check the available codes at the help link above.",
       "positive_number_required": "Device code must be a positive number",
       "invalid_remote_entity": "Controller data must be a remote entity (e.g., remote.bedroom_remote)",
       "entity_not_found": "The specified entity was not found",
@@ -96,6 +83,25 @@
           "power_sensor": "Power Sensor",
           "power_sensor_restore_state": "Restore state based on power sensor"
         }
+      }
+    }
+  },
+  "selector": {
+    "device_type": {
+      "options": {
+        "climate": "Climate (Air Conditioner)",
+        "fan": "Fan",
+        "media_player": "Media Player (TV/Audio)",
+        "light": "Light"
+      }
+    },
+    "controller": {
+      "options": {
+        "broadlink": "Broadlink",
+        "xiaomi": "Xiaomi IR Remote (ChuangmiIr)",
+        "lookin": "LOOK.in Remote",
+        "esphome": "ESPHome User-defined service for remote transmitter",
+        "mqtt": "MQTT Publish service"
       }
     }
   }

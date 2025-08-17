@@ -49,12 +49,7 @@ class SmartIRConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             data_schema=vol.Schema({
                 vol.Required("device_type"): selector.SelectSelector(
                     selector.SelectSelectorConfig(
-                        options=[
-                            "climate",
-                            "fan", 
-                            "media_player",
-                            "light"
-                        ],
+                        options=["climate", "fan", "media_player", "light"],
                         mode=selector.SelectSelectorMode.DROPDOWN,
                         translation_key="device_type"
                     )
@@ -78,13 +73,7 @@ class SmartIRConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     data_schema=vol.Schema({
                         vol.Required("controller"): selector.SelectSelector(
                             selector.SelectSelectorConfig(
-                                options=[
-                                    "broadlink",
-                                    "xiaomi", 
-                                    "lookin",
-                                    "esphome",
-                                    "mqtt"
-                                ],
+                                options=["broadlink", "xiaomi", "lookin", "esphome", "mqtt"],
                                 mode=selector.SelectSelectorMode.DROPDOWN,
                                 translation_key="controller"
                             )
@@ -101,13 +90,7 @@ class SmartIRConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             data_schema=vol.Schema({
                 vol.Required("controller"): selector.SelectSelector(
                     selector.SelectSelectorConfig(
-                        options=[
-                            "broadlink",
-                            "xiaomi", 
-                            "lookin",
-                            "esphome",
-                            "mqtt"
-                        ],
+                        options=["broadlink", "xiaomi", "lookin", "esphome", "mqtt"],
                         mode=selector.SelectSelectorMode.DROPDOWN,
                         translation_key="controller"
                     )
@@ -126,8 +109,20 @@ class SmartIRConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             try:
                 # Validate device_code
                 device_code = user_input.get("device_code")
-                if device_code is not None and device_code <= 0:
+                if device_code is None:
+                    errors["device_code"] = "device_code_required"
+                elif device_code <= 0:
                     errors["device_code"] = "positive_number_required"
+                else:
+                    # Check if device code exists by trying to download it
+                    from .helpers import download_device_codes
+                    device_data = await download_device_codes(
+                        self.hass, 
+                        self.device_type, 
+                        device_code
+                    )
+                    if device_data is None:
+                        errors["device_code"] = "device_code_not_found"
                 
                 if not errors:
                     # Create final configuration

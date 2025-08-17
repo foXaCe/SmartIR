@@ -258,14 +258,14 @@ class SmartIRMediaPlayer(MediaPlayerEntity, RestoreEntity):
         """Return device information for this media player entity."""
         device_class_name = self._device_class.title() if self._device_class else "Media Player"
         return {
-            "identifiers": {(DOMAIN, f"smartir_media_player_{self._device_code}")},
-            "name": f"{self._manufacturer} {self._supported_models[0] if self._supported_models else device_class_name}",
+            "identifiers": {(DOMAIN, self._unique_id or f"smartir_media_player_{self._device_code}")},
+            "name": self._name,
             "manufacturer": self._manufacturer,
             "model": ", ".join(self._supported_models) if self._supported_models else "Unknown",
             "sw_version": f"Device Code: {self._device_code}",
             "configuration_url": f"https://github.com/smartHomeHub/SmartIR/blob/master/codes/media_player/{self._device_code}.json",
             "suggested_area": "Living Room",
-            "via_device": (DOMAIN, "smartir_hub")
+            # "via_device": (DOMAIN, "smartir_hub")  # Temporary disabled
         }
 
     @property

@@ -166,7 +166,11 @@ class LookinController(AbstractController):
         encoding = self._encoding.lower().replace('pronto', 'prontohex')
         url = f"http://{self._controller_data}/commands/ir/" \
                 f"{encoding}/{command}"
-        await self.hass.async_add_executor_job(requests.get, url)
+        try:
+            await self.hass.async_add_executor_job(requests.get, url)
+        except requests.RequestException as e:
+            _LOGGER.error(f"Failed to send command to LOOKin controller: {e}")
+            raise
 
 
 class ESPHomeController(AbstractController):
