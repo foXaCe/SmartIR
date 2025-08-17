@@ -43,7 +43,7 @@
     },
     "error": {
       "device_code_required": "Le code de l'appareil est obligatoire. Veuillez entrer un code valide.",
-      "device_code_not_found": "Le code d'appareil {device_code} n'a pas été trouvé. Veuillez vérifier les codes disponibles via le lien d'aide ci-dessus.",
+      "device_code_not_found": "Le code d'appareil n'a pas été trouvé. Veuillez vérifier les codes disponibles via le lien d'aide ci-dessus.",
       "positive_number_required": "Le code de l'appareil doit être un nombre positif",
       "invalid_remote_entity": "Les données du contrôleur doivent être une entité télécommande (ex: remote.bedroom_remote)",
       "entity_not_found": "L'entité spécifiée n'a pas été trouvée", 
