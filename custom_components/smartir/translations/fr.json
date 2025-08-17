@@ -100,7 +100,8 @@
           "medium": "Moyenne",
           "low": "Faible",
           "quiet": "Silencieux",
-          "silent": "Silencieux"
+          "silent": "Silencieux",
+          "eco": "Éco"
         },
         "swing_mode": {
           "off": "Arrêt",

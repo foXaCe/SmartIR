@@ -115,7 +115,8 @@
           "medium": "Medium",
           "low": "Low",
           "quiet": "Quiet",
-          "silent": "Silent"
+          "silent": "Silent",
+          "eco": "Eco"
         },
         "swing_mode": {
           "off": "Off",
