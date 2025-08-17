@@ -45,8 +45,7 @@ async def download_device_codes(hass, device_type: str, device_code: int, update
     url = f"{base_url}/{device_type}/{device_code}.json"
     
     try:
-        session = aiohttp.ClientSession()
-        try:
+        async with aiohttp.ClientSession() as session:
             if update_progress:
                 await update_progress(f"Downloading codes for {device_type} device {device_code}...")
             
@@ -65,9 +64,7 @@ async def download_device_codes(hass, device_type: str, device_code: int, update
                     if update_progress:
                         await update_progress(f"Download failed: HTTP {response.status}")
                     return None
-        finally:
-            await session.close()
-            
+                    
     except aiohttp.ClientError as e:
         _LOGGER.error(f"Network error downloading device codes: {e}")
         if update_progress:
