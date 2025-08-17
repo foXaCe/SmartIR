@@ -113,16 +113,6 @@ class SmartIRConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     errors["device_code"] = "device_code_required"
                 elif device_code <= 0:
                     errors["device_code"] = "positive_number_required"
-                else:
-                    # Check if device code exists by trying to download it
-                    from .helpers import download_device_codes
-                    device_data = await download_device_codes(
-                        self.hass, 
-                        self.device_type, 
-                        device_code
-                    )
-                    if device_data is None:
-                        errors["device_code"] = "device_code_not_found"
                 
                 if not errors:
                     # Create final configuration
