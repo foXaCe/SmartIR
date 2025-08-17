@@ -89,5 +89,37 @@
         "mqtt": "Service de publication MQTT"
       }
     }
+  },
+  "entity": {
+    "climate": {
+      "state_attributes": {
+        "fan_mode": {
+          "auto": "Automatique",
+          "high": "Élevée",
+          "med": "Moyenne",
+          "medium": "Moyenne",
+          "low": "Faible",
+          "quiet": "Silencieux",
+          "silent": "Silencieux"
+        },
+        "swing_mode": {
+          "off": "Arrêt",
+          "vertical": "Vertical",
+          "horizontal": "Horizontal",
+          "both": "Les deux"
+        }
+      }
+    },
+    "fan": {
+      "state_attributes": {
+        "preset_mode": {
+          "auto": "Automatique",
+          "sleep": "Sommeil",
+          "normal": "Normal",
+          "nature": "Nature",
+          "turbo": "Turbo"
+        }
+      }
+    }
   }
 }
