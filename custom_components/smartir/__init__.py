@@ -86,22 +86,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     
     hass.data[DOMAIN][entry.entry_id] = platform_config
 
-    # Register device with the hub - Temporary disabled
-    # hub.register_device(device_code, device_type, manufacturer="Unknown")
-
-    _LOGGER.info(
-        "SmartIR configured: device_type=%s, controller_type=%s, registered with hub", 
-        device_type, 
-        controller_type
-    )
-    
     # Forward the setup to the platform
     platforms = [device_type]
-    
+
     # Add sensor platform for hub status (only for the first device)
     if len([k for k in hass.data[DOMAIN].keys() if k != "hub"]) == 1:
         platforms.append("sensor")
-        _LOGGER.debug("Adding sensor platform for SmartIR Hub")
     
     await hass.config_entries.async_forward_entry_setups(entry, platforms)
     
@@ -123,7 +113,6 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     remaining_devices = len([k for k in hass.data[DOMAIN].keys() if k != "hub" and k != entry.entry_id])
     if remaining_devices == 0:
         platforms.append("sensor")
-        _LOGGER.debug("Removing sensor platform for SmartIR Hub")
     
     unload_ok = await hass.config_entries.async_unload_platforms(entry, platforms)
     
@@ -152,45 +141,29 @@ class Helper():
         """Download a file from URL to destination path."""
         import aiohttp
         import aiofiles
-        
-        _LOGGER.info(f"Starting download: {url} -> {dest_path}")
-        
+
         # Ensure directory exists
         dest_dir = os.path.dirname(dest_path)
-        _LOGGER.debug(f"Creating directory: {dest_dir}")
         os.makedirs(dest_dir, exist_ok=True)
-        
+
         try:
-            _LOGGER.debug(f"Opening HTTP session for: {url}")
             async with aiohttp.ClientSession() as session:
-                _LOGGER.debug(f"Making GET request to: {url}")
                 async with session.get(url) as response:
-                    _LOGGER.info(f"HTTP response status: {response.status} for {url}")
                     if response.status == 200:
-                        _LOGGER.debug(f"Opening file for writing: {dest_path}")
                         async with aiofiles.open(dest_path, 'wb') as f:
-                            total_bytes = 0
                             async for chunk in response.content.iter_chunked(8192):
                                 await f.write(chunk)
-                                total_bytes += len(chunk)
-                        _LOGGER.info(f"Successfully downloaded {url} to {dest_path} ({total_bytes} bytes)")
-                        
-                        # Verify file was actually written
-                        if os.path.exists(dest_path):
-                            file_size = os.path.getsize(dest_path)
-                            _LOGGER.info(f"File verification: {dest_path} exists with {file_size} bytes")
-                        else:
-                            _LOGGER.error(f"File verification failed: {dest_path} does not exist after download")
+
+                        if not os.path.exists(dest_path):
                             raise FileNotFoundError(f"Downloaded file not found: {dest_path}")
                     else:
-                        _LOGGER.error(f"HTTP error {response.status} downloading {url}")
                         raise aiohttp.ClientResponseError(
                             request_info=response.request_info,
                             history=response.history,
                             status=response.status
                         )
         except Exception as e:
-            _LOGGER.error(f"Download failed for {url}: {type(e).__name__}: {e}")
+            _LOGGER.error(f"Download failed for {url}: {e}")
             raise
 
     @staticmethod

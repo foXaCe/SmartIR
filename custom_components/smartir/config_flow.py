@@ -35,15 +35,10 @@ class SmartIRConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_user(self, user_input=None):
         """Handle the device type selection step."""
-        _LOGGER.debug("=== SmartIR Config Flow - Step User ===")
-
         if user_input is not None:
-            _LOGGER.debug(f"User input received: {user_input}")
             self.device_type = user_input["device_type"]
-            _LOGGER.debug(f"Device type selected: {self.device_type}")
             return await self.async_step_controller()
 
-        _LOGGER.debug("Showing device type selection form")
         return self.async_show_form(
             step_id="user",
             data_schema=vol.Schema({
@@ -59,15 +54,10 @@ class SmartIRConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_controller(self, user_input=None):
         """Handle the controller type selection step."""
-        _LOGGER.debug("=== SmartIR Config Flow - Step Controller ===")
-        
         if user_input is not None:
-            _LOGGER.debug(f"Controller input received: {user_input}")
             self.controller_type = user_input.get("controller")
-            _LOGGER.debug(f"Controller type selected: {self.controller_type}")
-            
+
             if not self.controller_type:
-                _LOGGER.error(f"No controller in user_input: {user_input}")
                 return self.async_show_form(
                     step_id="controller",
                     data_schema=vol.Schema({
@@ -81,10 +71,9 @@ class SmartIRConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     }),
                     errors={"controller": "Controller selection required"}
                 )
-            
+
             return await self.async_step_device_config()
 
-        _LOGGER.debug("Showing controller selection form")
         return self.async_show_form(
             step_id="controller", 
             data_schema=vol.Schema({
@@ -100,12 +89,9 @@ class SmartIRConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_device_config(self, user_input=None):
         """Handle the device configuration step."""
-        _LOGGER.debug("=== SmartIR Config Flow - Step Device Config ===")
         errors = {}
-        
+
         if user_input is not None:
-            _LOGGER.debug(f"Device config input received: {user_input}")
-            
             try:
                 # Validate device_code
                 device_code = user_input.get("device_code")
@@ -113,15 +99,12 @@ class SmartIRConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     errors["device_code"] = "device_code_required"
                 elif device_code <= 0:
                     errors["device_code"] = "positive_number_required"
-                
+
                 if not errors:
                     # Create final configuration
                     device_name = user_input.get("name", f"SmartIR {DEVICE_TYPES[self.device_type]}")
                     controller_name = CONTROLLER_TYPES[self.controller_type]
-                    
-                    _LOGGER.debug(f"Creating entry with device_name: {device_name}, controller_name: {controller_name}")
-                    
-                    # Test avec différentes combinaisons de données
+
                     data = {
                         "device_type": self.device_type,
                         "controller": self.controller_type,
@@ -129,32 +112,20 @@ class SmartIRConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         "device_code": device_code,
                         "controller_data": user_input["controller_data"],
                     }
-                    
-                    _LOGGER.debug(f"Entry data being created: {data}")
-                    
+
                     # Add optional fields if provided
                     if user_input.get("delay") is not None:
                         data["delay"] = user_input["delay"]
-                        _LOGGER.debug(f"Added delay: {data['delay']}")
-                    
-                    _LOGGER.debug("About to call async_create_entry...")
-                    
-                    result = self.async_create_entry(
+
+                    return self.async_create_entry(
                         title=f"{device_name} ({controller_name})",
                         data=data,
                     )
-                    
-                    _LOGGER.debug(f"async_create_entry result: {result}")
-                    return result
-                    
+
             except Exception as e:
-                _LOGGER.error(f"Exception in device_config step: {e}")
-                _LOGGER.error(f"Exception type: {type(e)}")
-                import traceback
-                _LOGGER.error(f"Traceback: {traceback.format_exc()}")
+                _LOGGER.error(f"Config flow error: {e}")
                 errors["base"] = "unknown"
 
-        _LOGGER.debug("Showing device config form")
         # Build schema based on device type
         schema_dict = {
             vol.Optional("name"): str,

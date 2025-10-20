@@ -61,77 +61,53 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
 async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
     """Set up the IR Climate platform."""
-    _LOGGER.info(f"Setting up SmartIR climate platform with config: {config}")
     device_code = config.get(CONF_DEVICE_CODE)
     device_name = config.get(CONF_NAME, DEFAULT_NAME)
     unique_id = config.get("unique_id")
-    
-    _LOGGER.info(f"Device setup: code={device_code}, name={device_name}, unique_id={unique_id}")
-    
+
     device_files_subdir = os.path.join('codes', 'climate')
     device_files_absdir = os.path.join(COMPONENT_ABS_DIR, device_files_subdir)
 
     if not os.path.isdir(device_files_absdir):
-        _LOGGER.debug(f"Creating device directory: {device_files_absdir}")
         os.makedirs(device_files_absdir, exist_ok=True)
 
     device_json_filename = str(device_code) + '.json'
     device_json_path = os.path.join(device_files_absdir, device_json_filename)
-    _LOGGER.debug(f"Device JSON path: {device_json_path}")
 
     if not os.path.exists(device_json_path):
-        _LOGGER.warning("Couldn't find the device Json file. The component will " \
-                        "try to download it from the GitHub repo.")
-
         try:
             codes_source = ("https://raw.githubusercontent.com/"
                             "smartHomeHub/SmartIR/master/"
                             "codes/climate/{}.json")
 
             download_url = codes_source.format(device_code)
-            _LOGGER.info(f"Attempting to download device JSON from: {download_url}")
             await Helper.downloader(download_url, device_json_path)
-            _LOGGER.info(f"Download completed for device {device_code}")
         except Exception as e:
-            _LOGGER.error(f"Download failed for device {device_code}: {e}")
-            _LOGGER.error("There was an error while downloading the device Json file. " \
-                          "Please check your internet connection or if the device code " \
-                          "exists on GitHub. If the problem still exists please " \
-                          "place the file manually in the proper directory.")
+            _LOGGER.error(f"Failed to download device code {device_code}: {e}")
             return
 
     try:
-        _LOGGER.debug(f"Loading JSON file: {device_json_path}")
         async with aiofiles.open(device_json_path, mode='r') as j:
             content = await j.read()
             device_data = json.loads(content)
-            _LOGGER.info(f"Device JSON loaded: manufacturer={device_data.get('manufacturer')}, models={device_data.get('supportedModels')}")
     except Exception as e:
-        _LOGGER.error(f"Failed to load device JSON file: {e}")
+        _LOGGER.error(f"Failed to load device JSON: {e}")
         return
 
     # Map controller type from config entry to the format expected by controller.py
     controller_type = config.get(CONF_CONTROLLER_TYPE)
     if controller_type and controller_type in CONTROLLER_TYPES:
-        _LOGGER.debug(f"Mapping controller type {controller_type} to {CONTROLLER_TYPES[controller_type]}")
-        # Override the controller from JSON with the one from config entry
         device_data['supportedController'] = CONTROLLER_TYPES[controller_type]
-    
-    _LOGGER.info(f"Creating SmartIR climate entity: {device_name}")
+
     entity = SmartIRClimate(hass, config, device_data)
-    _LOGGER.info(f"Adding entity to Home Assistant: {entity.name}")
     async_add_entities([entity])
-    _LOGGER.info(f"SmartIR climate entity {device_name} added successfully")
 
 class SmartIRClimate(ClimateEntity, RestoreEntity):
     def __init__(self, hass, config, device_data):
         device_name = config.get(CONF_NAME, DEFAULT_NAME)
         device_code = config.get(CONF_DEVICE_CODE)
         unique_id = config.get("unique_id")
-        
-        _LOGGER.info(f"SmartIRClimate init started for device '{device_name}' (code: {device_code}, unique_id: {unique_id})")
-        _LOGGER.debug(f"Device supported models: {device_data.get('supportedModels', [])}")
-        
+
         self.hass = hass
         self._unique_id = unique_id
         self._name = device_name
@@ -200,8 +176,7 @@ class SmartIRClimate(ClimateEntity, RestoreEntity):
     async def async_added_to_hass(self):
         """Run when entity about to be added."""
         await super().async_added_to_hass()
-        _LOGGER.debug(f"async_added_to_hass {self} {self.name} {self.supported_features}")
-    
+
         last_state = await self.async_get_last_state()
         
         if last_state is not None:

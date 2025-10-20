@@ -81,11 +81,6 @@ async def async_setup_platform(
     device_json_path = os.path.join(device_files_absdir, device_json_filename)
 
     if not os.path.exists(device_json_path):
-        _LOGGER.warning(
-            "Couldn't find the device Json file. The component "
-            "will try to download it from the Github repo."
-        )
-
         try:
             codes_source = (
                 "https://raw.githubusercontent.com/"
@@ -97,23 +92,16 @@ async def async_setup_platform(
                 codes_source.format(device_code),
                 device_json_path,
             )
-        except Exception:
-            _LOGGER.error(
-                "There was an error while downloading the device Json file. "
-                "Please check your internet connection or if the device code "
-                "exists on GitHub. If the problem still exists please "
-                "place the file manually in the proper directory."
-            )
+        except Exception as e:
+            _LOGGER.error(f"Failed to download device code {device_code}: {e}")
             return
 
     try:
         async with aiofiles.open(device_json_path, mode='r') as j:
-            _LOGGER.debug(f"loading json file {device_json_path}")
             content = await j.read()
             device_data = json.loads(content)
-            _LOGGER.debug(f"{device_json_path} file loaded")
-    except Exception:
-        _LOGGER.error("The device JSON file is invalid")
+    except Exception as e:
+        _LOGGER.error(f"Invalid device JSON file: {e}")
         return
 
     # Map controller type from config entry to the format expected by controller.py
@@ -321,9 +309,6 @@ class SmartIRLight(LightEntity, RestoreEntity):
             target = params.get(ATTR_COLOR_TEMP_KELVIN)
             old_color_temp = closest_match(self._colortemp, self._colortemps)
             new_color_temp = closest_match(target, self._colortemps)
-            _LOGGER.debug(
-                f"Changing color temp from {self._colortemp}K step {old_color_temp} to {target}K step {new_color_temp}"
-            )
 
             steps = new_color_temp - old_color_temp
             did_something = True
@@ -356,9 +341,6 @@ class SmartIRLight(LightEntity, RestoreEntity):
                 old_brightness = closest_match(self._brightness, self._brightnesses)
                 new_brightness = closest_match(target, self._brightnesses)
                 did_something = True
-                _LOGGER.debug(
-                    f"Changing brightness from {self._brightness} step {old_brightness} to {target} step {new_brightness}"
-                )
                 steps = new_brightness - old_brightness
                 if steps < 0:
                     cmd = CMD_BRIGHTNESS_DECREASE
@@ -405,7 +387,6 @@ class SmartIRLight(LightEntity, RestoreEntity):
         if cmd not in self._commands:
             _LOGGER.error(f"Unknown command '{cmd}'")
             return
-        _LOGGER.debug(f"Sending {cmd} remote command {count} times.")
         remote_cmd = self._commands.get(cmd)
         async with self._temp_lock:
             self._on_by_remote = False

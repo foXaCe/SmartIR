@@ -52,31 +52,29 @@ async def download_device_codes(hass, device_type: str, device_code: int, update
             async with session.get(url) as response:
                 if response.status == 200:
                     device_data = await response.json()
-                    _LOGGER.info(f"Successfully downloaded codes for {device_type} device {device_code}")
                     return device_data
                 elif response.status == 404:
-                    _LOGGER.error(f"Device code {device_code} not found for {device_type}")
+                    _LOGGER.error(f"Device code {device_code} not found")
                     if update_progress:
                         await update_progress(f"Device code {device_code} not found")
                     return None
                 else:
-                    _LOGGER.error(f"Failed to download codes: HTTP {response.status}")
                     if update_progress:
                         await update_progress(f"Download failed: HTTP {response.status}")
                     return None
-                    
+
     except aiohttp.ClientError as e:
-        _LOGGER.error(f"Network error downloading device codes: {e}")
+        _LOGGER.error(f"Network error: {e}")
         if update_progress:
             await update_progress(f"Network error: {str(e)}")
         return None
     except json.JSONDecodeError as e:
-        _LOGGER.error(f"Invalid JSON in device codes: {e}")
+        _LOGGER.error(f"Invalid JSON: {e}")
         if update_progress:
             await update_progress(f"Invalid device code format")
         return None
     except Exception as e:
-        _LOGGER.error(f"Unexpected error downloading device codes: {e}")
+        _LOGGER.error(f"Download error: {e}")
         if update_progress:
             await update_progress(f"Unexpected error: {str(e)}")
         return None

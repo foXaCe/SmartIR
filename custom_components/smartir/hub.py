@@ -41,15 +41,13 @@ class SmartIRHub:
         if device_id not in self._active_devices:
             self._active_devices.add(device_id)
             self._devices_count += 1
-            _LOGGER.debug(f"Registered device {device_id} with SmartIR Hub")
-    
+
     def unregister_device(self, device_code: str, device_type: str):
         """Unregister a device from the hub."""
         device_id = f"{device_type}_{device_code}"
         if device_id in self._active_devices:
             self._active_devices.remove(device_id)
             self._devices_count -= 1
-            _LOGGER.debug(f"Unregistered device {device_id} from SmartIR Hub")
     
     @property
     def devices_count(self) -> int:

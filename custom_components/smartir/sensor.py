@@ -31,7 +31,6 @@ async def async_setup_entry(
         if not existing_sensors:
             hub_sensor = SmartIRHubSensor(hub)
             async_add_entities([hub_sensor])
-            _LOGGER.info("SmartIR Hub sensor created")
 
 
 class SmartIRHubSensor(SensorEntity):

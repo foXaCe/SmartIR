@@ -64,30 +64,22 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
     device_json_path = os.path.join(device_files_absdir, device_json_filename)
 
     if not os.path.exists(device_json_path):
-        _LOGGER.warning("Couldn't find the device Json file. The component will " \
-                        "try to download it from the GitHub repo.")
-
         try:
             codes_source = ("https://raw.githubusercontent.com/"
                             "smartHomeHub/SmartIR/master/"
                             "codes/fan/{}.json")
 
             await Helper.downloader(codes_source.format(device_code), device_json_path)
-        except Exception:
-            _LOGGER.error("There was an error while downloading the device Json file. " \
-                          "Please check your internet connection or if the device code " \
-                          "exists on GitHub. If the problem still exists please " \
-                          "place the file manually in the proper directory.")
+        except Exception as e:
+            _LOGGER.error(f"Failed to download device code {device_code}: {e}")
             return
 
     try:
         async with aiofiles.open(device_json_path, mode='r') as j:
-            _LOGGER.debug(f"loading json file {device_json_path}")
             content = await j.read()
             device_data = json.loads(content)
-            _LOGGER.debug(f"{device_json_path} file loaded")
-    except Exception:
-        _LOGGER.error("The device JSON file is invalid")
+    except Exception as e:
+        _LOGGER.error(f"Invalid device JSON file: {e}")
         return
 
     # Map controller type from config entry to the format expected by controller.py
