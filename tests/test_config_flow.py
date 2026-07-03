@@ -4,12 +4,12 @@ from __future__ import annotations
 
 from unittest.mock import AsyncMock, patch
 
-import pytest
 from homeassistant import config_entries, data_entry_flow
 from homeassistant.core import HomeAssistant
+import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.smartir.const import CONTROLLER_TYPES, DEVICE_TYPES, DOMAIN
+from custom_components.smartir.const import DOMAIN
 
 
 @pytest.fixture

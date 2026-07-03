@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+cat <<'EOF'
+Releases are automated with release-please.
+
+1. Push conventional commits to main (feat:, fix:, refactor:, docs: ...).
+2. release-please maintains a "Release PR" that bumps the version
+   (manifest.json + pyproject.toml) and updates CHANGELOG.md.
+3. Merge the Release PR when ready — the tag, GitHub release and the
+   smartir.zip asset are published automatically.
+
+No manual tagging required.
+EOF

@@ -2,10 +2,8 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock, patch
-
-import pytest
 from homeassistant.core import HomeAssistant
+import pytest
 
 from custom_components.smartir.controller import (
     BroadlinkController,

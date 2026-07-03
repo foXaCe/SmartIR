@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-import pytest
 from homeassistant.core import HomeAssistant
+import pytest
 
 from custom_components.smartir.const import DOMAIN
 

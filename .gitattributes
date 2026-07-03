@@ -1,0 +1,19 @@
+# Normalize line endings for source and config
+* text=auto eol=lf
+
+# Device-code data library (upstream): do not normalize (may contain CRLF)
+codes/** -text
+custom_components/smartir/codes/** -text
+
+# Explicitly declare source text files
+*.py    text eol=lf
+*.md    text eol=lf
+*.yaml  text eol=lf
+*.yml   text eol=lf
+*.svg   text eol=lf
+
+# Binary files
+*.png binary
+*.jpg binary
+*.gif binary
+*.zip binary

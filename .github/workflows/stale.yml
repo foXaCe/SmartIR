@@ -12,24 +12,24 @@ permissions:
 jobs:
   stale:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Mark stale issues and PRs
-        uses: actions/stale@v9
+        uses: actions/stale@v10
         with:
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-          days-before-stale: 40
-          days-before-close: 7
+          days-before-stale: 60
+          days-before-close: 14
           stale-issue-label: "stale"
           stale-pr-label: "stale"
           exempt-issue-labels: "pinned,security,help wanted"
           exempt-pr-labels: "pinned,security"
           stale-issue-message: >
             Cette issue a été automatiquement marquée comme stale car elle n'a pas eu
-            d'activité récente. Elle sera fermée si aucune autre activité ne se produit.
+            d'activité récente. Elle sera fermée dans 14 jours sans nouvelle activité.
             Merci pour votre contribution !
           stale-pr-message: >
             Cette PR a été automatiquement marquée comme stale car elle n'a pas eu
-            d'activité récente. Elle sera fermée si aucune autre activité ne se produit.
+            d'activité récente. Elle sera fermée dans 14 jours sans nouvelle activité.
           close-issue-message: >
             Cette issue a été fermée automatiquement car elle est restée inactive
             trop longtemps. N'hésitez pas à la rouvrir si le problème persiste.

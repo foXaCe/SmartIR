@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
-import asyncio
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
 from homeassistant.components.climate.const import ClimateEntityFeature, HVACMode
 from homeassistant.const import STATE_OFF, STATE_ON, STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.core import HomeAssistant
+import pytest
 
 from custom_components.smartir.climate import (
     DEFAULT_NAME,
@@ -192,9 +191,7 @@ class TestSmartIRClimateInit:
         mock_controller: MagicMock,
     ) -> None:
         """Test initialization without swing modes."""
-        climate = create_climate_entity(
-            hass, mock_climate_config, mock_climate_device_data_no_swing, mock_controller
-        )
+        climate = create_climate_entity(hass, mock_climate_config, mock_climate_device_data_no_swing, mock_controller)
 
         assert climate.swing_modes is None
         assert climate.swing_mode is None
@@ -260,9 +257,7 @@ class TestSmartIRClimateProperties:
         mock_controller: MagicMock,
     ) -> None:
         """Test supported features without swing mode."""
-        climate = create_climate_entity(
-            hass, mock_climate_config, mock_climate_device_data_no_swing, mock_controller
-        )
+        climate = create_climate_entity(hass, mock_climate_config, mock_climate_device_data_no_swing, mock_controller)
 
         expected = (
             ClimateEntityFeature.TURN_OFF
@@ -336,9 +331,7 @@ class TestSmartIRClimateIcon:
         mock_controller: MagicMock,
     ) -> SmartIRClimate:
         """Create a climate entity for testing."""
-        return create_climate_entity(
-            hass, mock_climate_config, mock_climate_device_data_with_commands, mock_controller
-        )
+        return create_climate_entity(hass, mock_climate_config, mock_climate_device_data_with_commands, mock_controller)
 
     def test_icon_off(self, climate_entity: SmartIRClimate) -> None:
         """Test icon when off."""
@@ -760,9 +753,7 @@ class TestSmartIRClimateSendCommand:
         mock_controller: MagicMock,
     ) -> None:
         """Test sending command without swing mode."""
-        climate = create_climate_entity(
-            hass, mock_climate_config, mock_climate_device_data_no_swing, mock_controller
-        )
+        climate = create_climate_entity(hass, mock_climate_config, mock_climate_device_data_no_swing, mock_controller)
         climate._hvac_mode = HVACMode.COOL
         climate._current_fan_mode = "auto"
         climate._target_temperature = 16

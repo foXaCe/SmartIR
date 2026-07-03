@@ -1,17 +1,17 @@
 # CODEOWNERS - SmartIR
 # https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
 
-# Les propriétaires par défaut pour tous les fichiers
-* @smartir-owners
+# Default owner for everything in the repo
+* @foXaCe
 
-# Code principal de l'intégration
-/custom_components/smartir/ @smartir-owners
+# Integration code
+/custom_components/smartir/ @foXaCe
 
-# Configuration CI/CD
-/.github/ @smartir-owners
+# Translations
+/custom_components/smartir/translations/ @foXaCe
+
+# CI/CD & repo tooling
+/.github/ @foXaCe
 
 # Tests
-/tests/ @smartir-owners
-
-# Documentation
-/README.md @smartir-owners
+/tests/ @foXaCe

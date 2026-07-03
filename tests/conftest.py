@@ -6,6 +6,7 @@ from collections.abc import Generator
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
+from homeassistant.core import HomeAssistant
 import pytest
 
 pytest_plugins = ("pytest_homeassistant_custom_component",)
@@ -18,7 +19,7 @@ def auto_enable_custom_integrations(enable_custom_integrations: bool) -> None:
 
 
 @pytest.fixture
-def mock_setup_entry() -> Generator[AsyncMock, None, None]:
+def mock_setup_entry() -> Generator[AsyncMock]:
     """Override async_setup_entry."""
     with patch(
         "custom_components.smartir.async_setup_entry",
@@ -96,14 +97,14 @@ def mock_power_sensor(hass: HomeAssistant) -> None:
 
 
 @pytest.fixture
-def mock_aiofiles() -> Generator[MagicMock, None, None]:
+def mock_aiofiles() -> Generator[MagicMock]:
     """Mock aiofiles for device code loading."""
     with patch("aiofiles.open") as mock_open:
         yield mock_open
 
 
 @pytest.fixture
-def mock_downloader() -> Generator[AsyncMock, None, None]:
+def mock_downloader() -> Generator[AsyncMock]:
     """Mock the Helper.downloader function."""
     with patch(
         "custom_components.smartir.Helper.downloader",

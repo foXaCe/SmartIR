@@ -1,8 +1,11 @@
 blank_issues_enabled: false
 contact_links:
-  - name: 📖 Documentation SmartIR
-    url: https://github.com/litinoveweedle/SmartIR/wiki
-    about: Consultez la documentation avant d'ouvrir une issue
-  - name: 💬 Discussions
-    url: https://github.com/litinoveweedle/SmartIR/discussions
-    about: Posez vos questions dans les discussions communautaires
+  - name: 💬 Discussions SmartIR
+    url: https://github.com/foXaCe/SmartIR/discussions
+    about: Posez vos questions dans les discussions communautaires du dépôt
+  - name: 🏠 Home Assistant Community
+    url: https://community.home-assistant.io/
+    about: Pour les questions générales sur Home Assistant
+  - name: 📦 Support HACS
+    url: https://hacs.xyz/
+    about: Pour les problèmes liés à HACS
