@@ -11,7 +11,9 @@
     ":maintainLockFilesWeekly",
     ":timezone(Europe/Paris)"
   ],
-  "baseBranches": ["main"],
+  "baseBranchPatterns": [
+    "main"
+  ],
   "labels": ["dependencies"],
   "reviewers": ["foXaCe"],
   "assignees": ["foXaCe"],
