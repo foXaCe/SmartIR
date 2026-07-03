@@ -1,7 +1,5 @@
 """Config flow for SmartIR integration."""
 
-import logging
-
 from homeassistant import config_entries
 from homeassistant.core import callback
 from homeassistant.helpers import selector
@@ -9,14 +7,11 @@ import voluptuous as vol
 
 from .const import CONTROLLER_TYPES, DEVICE_TYPES, DOMAIN
 
-_LOGGER = logging.getLogger(__name__)
-
 
 class SmartIRConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for SmartIR."""
 
     VERSION = 1
-    CONNECTION_CLASS = config_entries.CONN_CLASS_LOCAL_PUSH
 
     @staticmethod
     @callback
@@ -28,6 +23,41 @@ class SmartIRConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Initialize the config flow."""
         self.device_type = None
         self.controller_type = None
+
+    @staticmethod
+    def _reconfigure_schema(current):
+        """Build the reconfigure form schema pre-filled with current values."""
+        return vol.Schema(
+            {
+                vol.Required("device_code", default=current.get("device_code")): vol.All(int, vol.Range(min=1)),
+                vol.Required("controller_data", default=current.get("controller_data")): selector.EntitySelector(
+                    selector.EntitySelectorConfig(domain="remote", multiple=False)
+                ),
+                vol.Optional("delay", default=current.get("delay", 0.5)): vol.All(
+                    vol.Coerce(float), vol.Range(min=0.1, max=10.0)
+                ),
+            }
+        )
+
+    async def async_step_reconfigure(self, user_input=None):
+        """Reconfigure an existing SmartIR device."""
+        entry = self._get_reconfigure_entry()
+        current = {**entry.data, **entry.options}
+        errors = {}
+
+        if user_input is not None:
+            controller_data = user_input.get("controller_data")
+            if controller_data and self.hass.states.get(controller_data) is None:
+                errors["controller_data"] = "controller_not_found"
+
+            if not errors:
+                return self.async_update_reload_and_abort(entry, data={**entry.data, **user_input})
+
+        return self.async_show_form(
+            step_id="reconfigure",
+            data_schema=self._reconfigure_schema(current),
+            errors=errors,
+        )
 
     async def async_step_user(self, user_input=None):
         """Handle the device type selection step."""
@@ -94,39 +124,50 @@ class SmartIRConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         errors = {}
 
         if user_input is not None:
-            try:
-                # Validate device_code
-                device_code = user_input.get("device_code")
-                if device_code is None:
-                    errors["device_code"] = "device_code_required"
-                elif device_code <= 0:
-                    errors["device_code"] = "positive_number_required"
+            device_code = user_input.get("device_code")
+            controller_data = user_input.get("controller_data")
 
-                if not errors:
-                    # Create final configuration
-                    device_name = user_input.get("name", f"SmartIR {DEVICE_TYPES[self.device_type]}")
-                    controller_name = CONTROLLER_TYPES[self.controller_type]
+            if device_code is None:
+                errors["device_code"] = "device_code_required"
+            elif device_code <= 0:
+                errors["device_code"] = "positive_number_required"
 
-                    data = {
-                        "device_type": self.device_type,
-                        "controller": self.controller_type,
-                        "name": device_name,
-                        "device_code": device_code,
-                        "controller_data": user_input["controller_data"],
-                    }
+            # test-before-configure: the selected IR/RF controller entity must exist.
+            if controller_data and self.hass.states.get(controller_data) is None:
+                errors["controller_data"] = "controller_not_found"
 
-                    # Add optional fields if provided
-                    if user_input.get("delay") is not None:
-                        data["delay"] = user_input["delay"]
+            if not errors:
+                # unique-config-entry: prevent duplicate entries for the same device.
+                unique_id = f"smartir_{self.device_type}_{device_code}_{controller_data}"
+                await self.async_set_unique_id(unique_id)
+                self._abort_if_unique_id_configured()
 
-                    return self.async_create_entry(
-                        title=f"{device_name} ({controller_name})",
-                        data=data,
-                    )
+                device_name = user_input.get("name", f"SmartIR {DEVICE_TYPES[self.device_type]}")
+                controller_name = CONTROLLER_TYPES[self.controller_type]
 
-            except Exception as e:
-                _LOGGER.error(f"Config flow error: {e}")
-                errors["base"] = "unknown"
+                data = {
+                    "device_type": self.device_type,
+                    "controller": self.controller_type,
+                    "name": device_name,
+                    "device_code": device_code,
+                    "controller_data": controller_data,
+                }
+
+                # Carry optional fields (delay + sensors) when provided.
+                for opt in (
+                    "delay",
+                    "temperature_sensor",
+                    "humidity_sensor",
+                    "power_sensor",
+                    "power_sensor_restore_state",
+                ):
+                    if user_input.get(opt) is not None:
+                        data[opt] = user_input[opt]
+
+                return self.async_create_entry(
+                    title=f"{device_name} ({controller_name})",
+                    data=data,
+                )
 
         # Build schema based on device type
         schema_dict = {
@@ -164,7 +205,7 @@ class SmartIRConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             )
 
         # Generate help URL based on device type
-        device_code_help_url = f"https://github.com/smartHomeHub/SmartIR/tree/master/codes/{self.device_type}"
+        device_code_help_url = f"https://github.com/foXaCe/SmartIR/tree/main/codes/{self.device_type}"
 
         return self.async_show_form(
             step_id="device_config",
@@ -271,7 +312,7 @@ class SmartIROptionsFlow(config_entries.OptionsFlow):
                     selector.EntitySelectorConfig(**power_sensor_config)
                 )
 
-        device_code_help_url = f"https://github.com/smartHomeHub/SmartIR/tree/master/codes/{device_type}"
+        device_code_help_url = f"https://github.com/foXaCe/SmartIR/tree/main/codes/{device_type}"
 
         return self.async_show_form(
             step_id="init",

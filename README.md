@@ -121,6 +121,43 @@ logger:
     custom_components.smartir: debug
 ```
 
+## How data is updated
+
+SmartIR is a fire-and-forget IR/RF integration: it **sends** commands to your
+devices and does not poll them (`iot_class: assumed_state`). The entity state is
+maintained locally and restored across restarts. If you configure an optional
+`power_sensor`, SmartIR syncs the on/off state from that sensor in real time
+(event-driven, no polling).
+
+## Supported devices
+
+- **Climate** — air conditioners with temperature, HVAC/fan/swing modes
+- **Fan** — speed, oscillation and direction
+- **Media player** — power, volume, source selection (TVs / audio)
+- **Light** — brightness and color temperature
+
+Each device is driven by a **device code** (a JSON command set). Codes are
+downloaded on demand from this repository. If your exact model is not listed,
+a compatible code from the same manufacturer often works, or you can create
+your own.
+
+## Known limitations
+
+- IR/RF is one-way: SmartIR cannot read the real device state. Use a
+  `power_sensor` to detect manual on/off changes made with the physical remote.
+- The device must be in a known state when Home Assistant starts (state is
+  restored, not measured).
+- Line-of-sight to the IR blaster is required.
+
+## Removal
+
+1. In **Settings → Devices & Services**, open the SmartIR integration and
+   delete its config entries.
+2. If installed via HACS: open HACS → SmartIR → **Remove**, then restart
+   Home Assistant.
+3. If installed manually: delete `config/custom_components/smartir/` and
+   restart Home Assistant.
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md).

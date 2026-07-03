@@ -66,9 +66,9 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
 
     if not os.path.exists(device_json_path):
         try:
-            codes_source = "https://raw.githubusercontent.com/smartHomeHub/SmartIR/master/codes/media_player/{}.json"
+            codes_source = "https://raw.githubusercontent.com/foXaCe/SmartIR/main/codes/media_player/{}.json"
 
-            await Helper.downloader(codes_source.format(device_code), device_json_path)
+            await Helper.downloader(hass, codes_source.format(device_code), device_json_path)
         except Exception as e:
             _LOGGER.error(f"Failed to download device code {device_code}: {e}")
             return
@@ -259,7 +259,7 @@ class SmartIRMediaPlayer(MediaPlayerEntity, RestoreEntity):
             "manufacturer": self._manufacturer,
             "model": ", ".join(self._supported_models) if self._supported_models else "Unknown",
             "sw_version": f"Device Code: {self._device_code}",
-            "configuration_url": f"https://github.com/smartHomeHub/SmartIR/blob/master/codes/media_player/{self._device_code}.json",
+            "configuration_url": f"https://github.com/foXaCe/SmartIR/blob/main/codes/media_player/{self._device_code}.json",
             "suggested_area": "Living Room",
             # "via_device": (DOMAIN, "smartir_hub")  # Temporary disabled
         }

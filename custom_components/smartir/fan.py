@@ -71,9 +71,9 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
 
     if not os.path.exists(device_json_path):
         try:
-            codes_source = "https://raw.githubusercontent.com/smartHomeHub/SmartIR/master/codes/fan/{}.json"
+            codes_source = "https://raw.githubusercontent.com/foXaCe/SmartIR/main/codes/fan/{}.json"
 
-            await Helper.downloader(codes_source.format(device_code), device_json_path)
+            await Helper.downloader(hass, codes_source.format(device_code), device_json_path)
         except Exception as e:
             _LOGGER.error(f"Failed to download device code {device_code}: {e}")
             return
@@ -237,7 +237,7 @@ class SmartIRFan(FanEntity, RestoreEntity):
             "manufacturer": self._manufacturer,
             "model": ", ".join(self._supported_models) if self._supported_models else "Unknown",
             "sw_version": f"Device Code: {self._device_code}",
-            "configuration_url": f"https://github.com/smartHomeHub/SmartIR/blob/master/codes/fan/{self._device_code}.json",
+            "configuration_url": f"https://github.com/foXaCe/SmartIR/blob/main/codes/fan/{self._device_code}.json",
             "suggested_area": "Bedroom",
             # "via_device": (DOMAIN, "smartir_hub")  # Temporary disabled
         }
@@ -283,14 +283,14 @@ class SmartIRFan(FanEntity, RestoreEntity):
 
         self.async_write_ha_state()
 
-    async def async_turn_on(self, percentage: int = None, preset_mode: str = None, **kwargs):
+    async def async_turn_on(self, percentage: int | None = None, preset_mode: str | None = None, **kwargs) -> None:
         """Turn on the fan."""
         if percentage is None:
             percentage = ordered_list_item_to_percentage(self._speed_list, self._last_on_speed or self._speed_list[0])
 
         await self.async_set_percentage(percentage)
 
-    async def async_turn_off(self):
+    async def async_turn_off(self, **kwargs) -> None:
         """Turn off the fan."""
         await self.async_set_percentage(0)
 

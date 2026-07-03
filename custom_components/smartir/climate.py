@@ -87,10 +87,10 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
 
     if not os.path.exists(device_json_path):
         try:
-            codes_source = "https://raw.githubusercontent.com/smartHomeHub/SmartIR/master/codes/climate/{}.json"
+            codes_source = "https://raw.githubusercontent.com/foXaCe/SmartIR/main/codes/climate/{}.json"
 
             download_url = codes_source.format(device_code)
-            await Helper.downloader(download_url, device_json_path)
+            await Helper.downloader(hass, download_url, device_json_path)
         except Exception as e:
             _LOGGER.error(f"Failed to download device code {device_code}: {e}")
             return
@@ -154,7 +154,7 @@ class SmartIRClimate(ClimateEntity, RestoreEntity):
         self._commands = device_data["commands"]
 
         self._target_temperature = self._min_temperature
-        self._hvac_mode = HVACMode.OFF
+        self._hvac_mode: str = HVACMode.OFF
         self._current_fan_mode = self._fan_modes[0]
         self._current_swing_mode = None
         self._last_on_operation = None
@@ -250,13 +250,6 @@ class SmartIRClimate(ClimateEntity, RestoreEntity):
             return "mdi:thermostat"
 
     @property
-    def state(self):
-        """Return the current state."""
-        if self.hvac_mode != HVACMode.OFF:
-            return self.hvac_mode
-        return HVACMode.OFF
-
-    @property
     def temperature_unit(self):
         """Return the unit of measurement."""
         return self._unit
@@ -340,7 +333,7 @@ class SmartIRClimate(ClimateEntity, RestoreEntity):
             "manufacturer": self._manufacturer,
             "model": ", ".join(self._supported_models) if self._supported_models else "Unknown",
             "sw_version": f"Device Code: {self._device_code}",
-            "configuration_url": f"https://github.com/smartHomeHub/SmartIR/blob/master/codes/climate/{self._device_code}.json",
+            "configuration_url": f"https://github.com/foXaCe/SmartIR/blob/main/codes/climate/{self._device_code}.json",
             "suggested_area": "Living Room",
             # "via_device": (DOMAIN, "smartir_hub")  # Temporary disabled
         }
