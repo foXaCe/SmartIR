@@ -1,77 +1,101 @@
-"""Config flow for SmartIR integration."""
+"""Config and options flow for the SmartIR integration."""
+
+from __future__ import annotations
+
+from typing import Any
 
 from homeassistant import config_entries
 from homeassistant.core import callback
 from homeassistant.helpers import selector
 import voluptuous as vol
 
-from .const import CONTROLLER_TYPES, DEVICE_TYPES, DOMAIN
+from .const import (
+    CONF_CONTROLLER_DATA,
+    CONF_CONTROLLER_TYPE,
+    CONF_DELAY,
+    CONF_DEVICE_CODE,
+    CONF_DEVICE_TYPE,
+    CONF_HUMIDITY_SENSOR,
+    CONF_NAME,
+    CONF_POWER_SENSOR,
+    CONF_POWER_SENSOR_RESTORE_STATE,
+    CONF_TEMPERATURE_SENSOR,
+    CONTROLLER_TYPES,
+    DEFAULT_DELAY,
+    DEVICE_TYPES,
+    DOMAIN,
+)
+
+_DEVICE_CODE_SELECTOR = selector.NumberSelector(
+    selector.NumberSelectorConfig(min=1, step=1, mode=selector.NumberSelectorMode.BOX)
+)
+_DELAY_SELECTOR = selector.NumberSelector(
+    selector.NumberSelectorConfig(
+        min=0.1, max=10, step=0.1, mode=selector.NumberSelectorMode.BOX, unit_of_measurement="s"
+    )
+)
+_REMOTE_SELECTOR = selector.EntitySelector(selector.EntitySelectorConfig(domain="remote"))
+
+
+def _sensor_selector(device_class: str) -> selector.EntitySelector:
+    """Return an entity selector for a sensor of the given device class."""
+    return selector.EntitySelector(selector.EntitySelectorConfig(domain="sensor", device_class=device_class))
+
+
+def _opt(key: str, current: dict[str, Any]) -> vol.Optional:
+    """Return a ``vol.Optional`` pre-filled with the current value when present."""
+    value = current.get(key)
+    if value is not None:
+        return vol.Optional(key, default=value)
+    return vol.Optional(key)
+
+
+def _sensor_fields(device_type: str, current: dict[str, Any]) -> dict[Any, Any]:
+    """Return the device-type-specific sensor fields for a schema."""
+    fields: dict[Any, Any] = {}
+    if device_type == "climate":
+        fields[_opt(CONF_TEMPERATURE_SENSOR, current)] = _sensor_selector("temperature")
+        fields[_opt(CONF_HUMIDITY_SENSOR, current)] = _sensor_selector("humidity")
+    fields[_opt(CONF_POWER_SENSOR, current)] = _sensor_selector("power")
+    if device_type == "climate":
+        fields[
+            vol.Optional(
+                CONF_POWER_SENSOR_RESTORE_STATE,
+                default=current.get(CONF_POWER_SENSOR_RESTORE_STATE, False),
+            )
+        ] = selector.BooleanSelector()
+    return fields
 
 
 class SmartIRConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for SmartIR."""
 
-    VERSION = 1
+    VERSION = 2
+
+    def __init__(self) -> None:
+        """Initialize the config flow."""
+        self.device_type: str | None = None
+        self.controller_type: str | None = None
 
     @staticmethod
     @callback
-    def async_get_options_flow(config_entry):
-        """Get the options flow for this handler."""
+    def async_get_options_flow(config_entry: config_entries.ConfigEntry) -> SmartIROptionsFlow:
+        """Return the options flow handler."""
         return SmartIROptionsFlow()
 
-    def __init__(self):
-        """Initialize the config flow."""
-        self.device_type = None
-        self.controller_type = None
-
-    @staticmethod
-    def _reconfigure_schema(current):
-        """Build the reconfigure form schema pre-filled with current values."""
-        return vol.Schema(
-            {
-                vol.Required("device_code", default=current.get("device_code")): vol.All(int, vol.Range(min=1)),
-                vol.Required("controller_data", default=current.get("controller_data")): selector.EntitySelector(
-                    selector.EntitySelectorConfig(domain="remote", multiple=False)
-                ),
-                vol.Optional("delay", default=current.get("delay", 0.5)): vol.All(
-                    vol.Coerce(float), vol.Range(min=0.1, max=10.0)
-                ),
-            }
-        )
-
-    async def async_step_reconfigure(self, user_input=None):
-        """Reconfigure an existing SmartIR device."""
-        entry = self._get_reconfigure_entry()
-        current = {**entry.data, **entry.options}
-        errors = {}
-
+    async def async_step_user(self, user_input: dict[str, Any] | None = None) -> config_entries.ConfigFlowResult:
+        """Select the device type."""
         if user_input is not None:
-            controller_data = user_input.get("controller_data")
-            if controller_data and self.hass.states.get(controller_data) is None:
-                errors["controller_data"] = "controller_not_found"
-
-            if not errors:
-                return self.async_update_reload_and_abort(entry, data={**entry.data, **user_input})
-
-        return self.async_show_form(
-            step_id="reconfigure",
-            data_schema=self._reconfigure_schema(current),
-            errors=errors,
-        )
-
-    async def async_step_user(self, user_input=None):
-        """Handle the device type selection step."""
-        if user_input is not None:
-            self.device_type = user_input["device_type"]
+            self.device_type = user_input[CONF_DEVICE_TYPE]
             return await self.async_step_controller()
 
         return self.async_show_form(
             step_id="user",
             data_schema=vol.Schema(
                 {
-                    vol.Required("device_type"): selector.SelectSelector(
+                    vol.Required(CONF_DEVICE_TYPE): selector.SelectSelector(
                         selector.SelectSelectorConfig(
-                            options=["climate", "fan", "media_player", "light"],
+                            options=list(DEVICE_TYPES),
                             mode=selector.SelectSelectorMode.DROPDOWN,
                             translation_key="device_type",
                         )
@@ -80,37 +104,19 @@ class SmartIRConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             ),
         )
 
-    async def async_step_controller(self, user_input=None):
-        """Handle the controller type selection step."""
+    async def async_step_controller(self, user_input: dict[str, Any] | None = None) -> config_entries.ConfigFlowResult:
+        """Select the controller type."""
         if user_input is not None:
-            self.controller_type = user_input.get("controller")
-
-            if not self.controller_type:
-                return self.async_show_form(
-                    step_id="controller",
-                    data_schema=vol.Schema(
-                        {
-                            vol.Required("controller"): selector.SelectSelector(
-                                selector.SelectSelectorConfig(
-                                    options=["broadlink", "xiaomi", "lookin", "esphome", "mqtt"],
-                                    mode=selector.SelectSelectorMode.DROPDOWN,
-                                    translation_key="controller",
-                                )
-                            )
-                        }
-                    ),
-                    errors={"controller": "Controller selection required"},
-                )
-
+            self.controller_type = user_input[CONF_CONTROLLER_TYPE]
             return await self.async_step_device_config()
 
         return self.async_show_form(
             step_id="controller",
             data_schema=vol.Schema(
                 {
-                    vol.Required("controller"): selector.SelectSelector(
+                    vol.Required(CONF_CONTROLLER_TYPE): selector.SelectSelector(
                         selector.SelectSelectorConfig(
-                            options=["broadlink", "xiaomi", "lookin", "esphome", "mqtt"],
+                            options=list(CONTROLLER_TYPES),
                             mode=selector.SelectSelectorMode.DROPDOWN,
                             translation_key="controller",
                         )
@@ -119,203 +125,114 @@ class SmartIRConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             ),
         )
 
-    async def async_step_device_config(self, user_input=None):
-        """Handle the device configuration step."""
-        errors = {}
+    async def async_step_device_config(
+        self, user_input: dict[str, Any] | None = None
+    ) -> config_entries.ConfigFlowResult:
+        """Configure the device (code, controller entity, delay, sensors)."""
+        assert self.device_type is not None
+        errors: dict[str, str] = {}
 
         if user_input is not None:
-            device_code = user_input.get("device_code")
-            controller_data = user_input.get("controller_data")
-
-            if device_code is None:
-                errors["device_code"] = "device_code_required"
-            elif device_code <= 0:
-                errors["device_code"] = "positive_number_required"
-
-            # test-before-configure: the selected IR/RF controller entity must exist.
+            controller_data = user_input.get(CONF_CONTROLLER_DATA)
             if controller_data and self.hass.states.get(controller_data) is None:
-                errors["controller_data"] = "controller_not_found"
+                errors[CONF_CONTROLLER_DATA] = "controller_not_found"
 
             if not errors:
-                # unique-config-entry: prevent duplicate entries for the same device.
+                assert self.controller_type is not None
+                device_code = int(user_input[CONF_DEVICE_CODE])
                 unique_id = f"smartir_{self.device_type}_{device_code}_{controller_data}"
                 await self.async_set_unique_id(unique_id)
                 self._abort_if_unique_id_configured()
 
-                device_name = user_input.get("name", f"SmartIR {DEVICE_TYPES[self.device_type]}")
+                device_name = user_input.get(CONF_NAME) or f"SmartIR {DEVICE_TYPES[self.device_type]}"
                 controller_name = CONTROLLER_TYPES[self.controller_type]
 
-                data = {
-                    "device_type": self.device_type,
-                    "controller": self.controller_type,
-                    "name": device_name,
-                    "device_code": device_code,
-                    "controller_data": controller_data,
+                data: dict[str, Any] = {
+                    CONF_DEVICE_TYPE: self.device_type,
+                    CONF_CONTROLLER_TYPE: self.controller_type,
+                    CONF_NAME: device_name,
+                    CONF_DEVICE_CODE: device_code,
+                    CONF_CONTROLLER_DATA: controller_data,
+                    CONF_DELAY: user_input.get(CONF_DELAY, DEFAULT_DELAY),
                 }
-
-                # Carry optional fields (delay + sensors) when provided.
                 for opt in (
-                    "delay",
-                    "temperature_sensor",
-                    "humidity_sensor",
-                    "power_sensor",
-                    "power_sensor_restore_state",
+                    CONF_TEMPERATURE_SENSOR,
+                    CONF_HUMIDITY_SENSOR,
+                    CONF_POWER_SENSOR,
+                    CONF_POWER_SENSOR_RESTORE_STATE,
                 ):
                     if user_input.get(opt) is not None:
                         data[opt] = user_input[opt]
 
-                return self.async_create_entry(
-                    title=f"{device_name} ({controller_name})",
-                    data=data,
-                )
+                return self.async_create_entry(title=f"{device_name} ({controller_name})", data=data)
 
-        # Build schema based on device type
-        schema_dict = {
-            vol.Optional("name"): str,
-            vol.Required("device_code"): vol.All(int, vol.Range(min=1)),
-            vol.Required("controller_data"): selector.EntitySelector(
-                selector.EntitySelectorConfig(domain="remote", multiple=False)
-            ),
-            vol.Optional("delay", default=0.5): vol.All(vol.Coerce(float), vol.Range(min=0.1, max=10.0)),
+        schema: dict[Any, Any] = {
+            vol.Optional(CONF_NAME): selector.TextSelector(),
+            vol.Required(CONF_DEVICE_CODE): _DEVICE_CODE_SELECTOR,
+            vol.Required(CONF_CONTROLLER_DATA): _REMOTE_SELECTOR,
+            vol.Optional(CONF_DELAY, default=DEFAULT_DELAY): _DELAY_SELECTOR,
+            **_sensor_fields(self.device_type, {}),
         }
-
-        # Add device-specific sensors
-        if self.device_type == "climate":
-            schema_dict.update(
-                {
-                    vol.Optional("temperature_sensor"): selector.EntitySelector(
-                        selector.EntitySelectorConfig(domain="sensor", device_class="temperature", multiple=False)
-                    ),
-                    vol.Optional("humidity_sensor"): selector.EntitySelector(
-                        selector.EntitySelectorConfig(domain="sensor", device_class="humidity", multiple=False)
-                    ),
-                    vol.Optional("power_sensor"): selector.EntitySelector(
-                        selector.EntitySelectorConfig(domain="sensor", device_class="power", multiple=False)
-                    ),
-                    vol.Optional("power_sensor_restore_state", default=False): bool,
-                }
-            )
-        elif self.device_type in ["fan", "light", "media_player"]:
-            schema_dict.update(
-                {
-                    vol.Optional("power_sensor"): selector.EntitySelector(
-                        selector.EntitySelectorConfig(domain="sensor", device_class="power", multiple=False)
-                    ),
-                }
-            )
-
-        # Generate help URL based on device type
-        device_code_help_url = f"https://github.com/foXaCe/SmartIR/tree/main/codes/{self.device_type}"
 
         return self.async_show_form(
             step_id="device_config",
-            data_schema=vol.Schema(schema_dict),
+            data_schema=vol.Schema(schema),
             errors=errors,
-            description_placeholders={"device_code_help_url": device_code_help_url},
+            description_placeholders={
+                "device_code_help_url": f"https://github.com/foXaCe/SmartIR/tree/main/codes/{self.device_type}"
+            },
         )
+
+    async def async_step_reconfigure(self, user_input: dict[str, Any] | None = None) -> config_entries.ConfigFlowResult:
+        """Reconfigure an existing device (code, controller entity, delay)."""
+        entry = self._get_reconfigure_entry()
+        current = {**entry.data, **entry.options}
+        errors: dict[str, str] = {}
+
+        if user_input is not None:
+            controller_data = user_input.get(CONF_CONTROLLER_DATA)
+            if controller_data and self.hass.states.get(controller_data) is None:
+                errors[CONF_CONTROLLER_DATA] = "controller_not_found"
+
+            if not errors:
+                updates = {**user_input, CONF_DEVICE_CODE: int(user_input[CONF_DEVICE_CODE])}
+                # async_update_and_abort (not *_reload_*) so the single reload is
+                # driven by the update listener registered in __init__.py.
+                return self.async_update_and_abort(entry, data_updates=updates)
+
+        schema = {
+            vol.Required(CONF_DEVICE_CODE, default=current.get(CONF_DEVICE_CODE)): _DEVICE_CODE_SELECTOR,
+            vol.Required(CONF_CONTROLLER_DATA, default=current.get(CONF_CONTROLLER_DATA)): _REMOTE_SELECTOR,
+            vol.Optional(CONF_DELAY, default=current.get(CONF_DELAY, DEFAULT_DELAY)): _DELAY_SELECTOR,
+        }
+
+        return self.async_show_form(step_id="reconfigure", data_schema=vol.Schema(schema), errors=errors)
 
 
 class SmartIROptionsFlow(config_entries.OptionsFlow):
-    """Handle options flow for SmartIR."""
+    """Handle the SmartIR options flow."""
 
-    def __init__(self) -> None:
-        """Initialize options flow."""
-        self.device_type = None
-
-    async def async_step_init(self, user_input=None):
-        """Manage the SmartIR options."""
-        if self.device_type is None:
-            self.device_type = self.config_entry.data.get("device_type")
-
+    async def async_step_init(self, user_input: dict[str, Any] | None = None) -> config_entries.ConfigFlowResult:
+        """Manage the SmartIR device options."""
         if user_input is not None:
-            # Update the config entry with new options
-            return self.async_create_entry(title="", data=user_input)
+            options = {**user_input, CONF_DEVICE_CODE: int(user_input[CONF_DEVICE_CODE])}
+            return self.async_create_entry(data=options)
 
-        # Get current configuration
-        current_config = self.config_entry.data
-        device_type = current_config.get("device_type")
+        current = {**self.config_entry.data, **self.config_entry.options}
+        device_type = current.get(CONF_DEVICE_TYPE, "climate")
 
-        # Build schema based on current configuration and device type
-        schema_dict = {
-            vol.Optional("device_code", default=current_config.get("device_code", 1)): vol.All(int, vol.Range(min=1)),
-            vol.Optional("delay", default=current_config.get("delay", 0.5)): vol.All(
-                vol.Coerce(float), vol.Range(min=0.1, max=10.0)
-            ),
+        schema: dict[Any, Any] = {
+            _opt(CONF_NAME, current): selector.TextSelector(),
+            vol.Optional(CONF_DEVICE_CODE, default=current.get(CONF_DEVICE_CODE, 1)): _DEVICE_CODE_SELECTOR,
+            _opt(CONF_CONTROLLER_DATA, current): _REMOTE_SELECTOR,
+            vol.Optional(CONF_DELAY, default=current.get(CONF_DELAY, DEFAULT_DELAY)): _DELAY_SELECTOR,
+            **_sensor_fields(device_type, current),
         }
-
-        # Handle name separately to allow empty values
-        if current_config.get("name"):
-            schema_dict[vol.Optional("name", default=current_config.get("name"))] = str
-        else:
-            schema_dict[vol.Optional("name")] = str
-
-        # Handle controller_data separately to avoid empty string default
-        if current_config.get("controller_data"):
-            schema_dict[vol.Optional("controller_data", default=current_config.get("controller_data"))] = (
-                selector.EntitySelector(selector.EntitySelectorConfig(domain="remote", multiple=False))
-            )
-        else:
-            schema_dict[vol.Optional("controller_data")] = selector.EntitySelector(
-                selector.EntitySelectorConfig(domain="remote", multiple=False)
-            )
-
-        # Add device-specific options
-        if device_type == "climate":
-            # Only add default if entity exists in current config
-            temp_sensor_config = {"domain": "sensor", "device_class": "temperature", "multiple": False}
-            humidity_sensor_config = {"domain": "sensor", "device_class": "humidity", "multiple": False}
-            power_sensor_config = {"domain": "sensor", "device_class": "power", "multiple": False}
-
-            # Build the schema dynamically based on existing values
-            if current_config.get("temperature_sensor"):
-                schema_dict[vol.Optional("temperature_sensor", default=current_config.get("temperature_sensor"))] = (
-                    selector.EntitySelector(selector.EntitySelectorConfig(**temp_sensor_config))
-                )
-            else:
-                schema_dict[vol.Optional("temperature_sensor")] = selector.EntitySelector(
-                    selector.EntitySelectorConfig(**temp_sensor_config)
-                )
-
-            if current_config.get("humidity_sensor"):
-                schema_dict[vol.Optional("humidity_sensor", default=current_config.get("humidity_sensor"))] = (
-                    selector.EntitySelector(selector.EntitySelectorConfig(**humidity_sensor_config))
-                )
-            else:
-                schema_dict[vol.Optional("humidity_sensor")] = selector.EntitySelector(
-                    selector.EntitySelectorConfig(**humidity_sensor_config)
-                )
-
-            if current_config.get("power_sensor"):
-                schema_dict[vol.Optional("power_sensor", default=current_config.get("power_sensor"))] = (
-                    selector.EntitySelector(selector.EntitySelectorConfig(**power_sensor_config))
-                )
-            else:
-                schema_dict[vol.Optional("power_sensor")] = selector.EntitySelector(
-                    selector.EntitySelectorConfig(**power_sensor_config)
-                )
-
-            schema_dict[
-                vol.Optional(
-                    "power_sensor_restore_state", default=current_config.get("power_sensor_restore_state", False)
-                )
-            ] = bool
-
-        elif device_type in ["fan", "light", "media_player"]:
-            power_sensor_config = {"domain": "sensor", "device_class": "power", "multiple": False}
-
-            if current_config.get("power_sensor"):
-                schema_dict[vol.Optional("power_sensor", default=current_config.get("power_sensor"))] = (
-                    selector.EntitySelector(selector.EntitySelectorConfig(**power_sensor_config))
-                )
-            else:
-                schema_dict[vol.Optional("power_sensor")] = selector.EntitySelector(
-                    selector.EntitySelectorConfig(**power_sensor_config)
-                )
-
-        device_code_help_url = f"https://github.com/foXaCe/SmartIR/tree/main/codes/{device_type}"
 
         return self.async_show_form(
             step_id="init",
-            data_schema=vol.Schema(schema_dict),
-            description_placeholders={"device_code_help_url": device_code_help_url},
+            data_schema=vol.Schema(schema),
+            description_placeholders={
+                "device_code_help_url": f"https://github.com/foXaCe/SmartIR/tree/main/codes/{device_type}"
+            },
         )

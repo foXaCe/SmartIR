@@ -38,3 +38,6 @@ home-assistant.log
 *.local
 .env
 .envrc
+
+# SmartIR runtime code cache (downloaded on demand)
+custom_components/smartir/codes/

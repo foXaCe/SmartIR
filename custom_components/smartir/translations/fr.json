@@ -8,28 +8,6 @@
           "device_type": "Type d'appareil"
         }
       },
-      "migration": {
-        "title": "Migration SmartIR",
-        "description": "Nous avons trouvé des appareils SmartIR existants dans votre configuration.yaml. Souhaitez-vous les migrer vers le nouveau config flow ?",
-        "data": {
-          "migrate": "Migrer les appareils existants",
-          "devices": "Sélectionner les appareils à migrer"
-        }
-      },
-      "migration_complete": {
-        "title": "Migration terminée",
-        "description": "Les appareils suivants ont été migrés avec succès :\n\n{devices}\n\nSouhaitez-vous supprimer l'ancienne configuration YAML de votre fichier configuration.yaml ?",
-        "data": {
-          "remove_yaml": "Afficher les instructions pour supprimer la configuration YAML"
-        }
-      },
-      "device_type": {
-        "title": "Sélection du type d'appareil",
-        "description": "Sélectionnez le type d'appareil que vous voulez contrôler",
-        "data": {
-          "device_type": "Type d'appareil"
-        }
-      },
       "controller": {
         "title": "Sélection du contrôleur",
         "description": "Sélectionnez le type de contrôleur IR",
@@ -42,41 +20,30 @@
         "description": "Configurez les paramètres de votre appareil SmartIR.\n\n**Besoin d'aide pour trouver le code de votre appareil ?** [Parcourez les codes d'appareils disponibles ici]({device_code_help_url})",
         "data": {
           "name": "Nom de l'appareil",
-          "unique_id": "ID unique",
           "device_code": "Code de l'appareil",
           "controller_data": "Contrôleur",
           "delay": "Délai entre commandes (secondes)",
           "temperature_sensor": "Capteur de température",
           "humidity_sensor": "Capteur d'humidité",
           "power_sensor": "Capteur d'alimentation",
-          "power_sensor_restore_state": "Restaurer l'état basé sur le capteur d'alimentation"
+          "power_sensor_restore_state": "Restaurer l'état à partir du capteur d'alimentation"
         }
       },
       "reconfigure": {
         "title": "Reconfigurer l'appareil SmartIR",
-        "description": "Modifiez le code appareil, l'entité contrôleur ou le délai entre commandes.",
+        "description": "Modifiez le code de l'appareil, l'entité contrôleur ou le délai entre commandes.",
         "data": {
-          "device_code": "Code appareil",
+          "device_code": "Code de l'appareil",
           "controller_data": "Contrôleur",
           "delay": "Délai entre commandes (secondes)"
         }
       }
     },
     "abort": {
-      "single_instance_allowed": "Une seule instance est autorisée.",
       "already_configured": "Cet appareil est déjà configuré.",
       "reconfigure_successful": "Appareil reconfiguré avec succès."
     },
     "error": {
-      "device_code_required": "Le code de l'appareil est obligatoire. Veuillez entrer un code valide.",
-      "device_code_not_found": "Le code d'appareil n'a pas été trouvé. Veuillez vérifier les codes disponibles via le lien d'aide ci-dessus.",
-      "positive_number_required": "Le code de l'appareil doit être un nombre positif",
-      "invalid_remote_entity": "Les données du contrôleur doivent être une entité télécommande (ex: remote.bedroom_remote)",
-      "entity_not_found": "L'entité spécifiée n'a pas été trouvée",
-      "invalid_ip_address": "Les données du contrôleur doivent être une adresse IP valide",
-      "invalid_mqtt_topic": "Les données du contrôleur doivent être un topic MQTT valide",
-      "invalid_service_name": "Les données du contrôleur doivent être un nom de service valide",
-      "invalid_entity": "L'entité spécifiée n'est pas valide",
       "controller_not_found": "L'entité contrôleur sélectionnée est introuvable. Vérifiez qu'elle existe et qu'elle est disponible."
     }
   },
@@ -93,7 +60,7 @@
           "temperature_sensor": "Capteur de température",
           "humidity_sensor": "Capteur d'humidité",
           "power_sensor": "Capteur d'alimentation",
-          "power_sensor_restore_state": "Restaurer l'état basé sur le capteur d'alimentation"
+          "power_sensor_restore_state": "Restaurer l'état à partir du capteur d'alimentation"
         }
       }
     }
@@ -112,9 +79,20 @@
         "broadlink": "Broadlink",
         "xiaomi": "Télécommande IR Xiaomi (ChuangmiIr)",
         "lookin": "Télécommande LOOK.in",
-        "esphome": "Service défini par l'utilisateur ESPHome pour transmetteur distant",
+        "esphome": "Service ESPHome défini par l'utilisateur pour transmetteur distant",
         "mqtt": "Service de publication MQTT"
       }
+    }
+  },
+  "exceptions": {
+    "command_failed": {
+      "message": "La commande n'a pas pu être envoyée à l'appareil : {error}"
+    }
+  },
+  "issues": {
+    "device_data_unavailable": {
+      "title": "Code d'appareil SmartIR indisponible",
+      "description": "Le code d'appareil {code} pour la plateforme {platform} n'a pas pu être chargé depuis la base de codes. Vérifiez que le code existe et reconfigurez l'appareil SmartIR avec un code valide."
     }
   }
 }
