@@ -1,0 +1,75 @@
+[project]
+name = "smartir"
+version = "1.18.1"
+description = "SmartIR - Control IR devices via Home Assistant"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.12"
+dependencies = [
+    "aiofiles>=0.6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-cov>=4.1.0",
+    "pytest-homeassistant-custom-component>=0.13.0",
+    "ruff>=0.4.0",
+    "mypy>=1.10.0",
+]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 120
+
+[tool.ruff.lint]
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # pyflakes
+    "I",      # isort
+    "B",      # flake8-bugbear
+    "C4",     # flake8-comprehensions
+    "UP",     # pyupgrade
+]
+ignore = [
+    "PLR0913",  # Too many arguments
+    "PLR2004",  # Magic value used in comparison
+    "PLR0912",  # Too many branches
+    "PLR0915",  # Too many statements
+    "E402",     # Module level import not at top of file (needed for COMPONENT_ABS_DIR)
+    "E712",     # Comparison to True/False (legacy code style)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["ARG001", "PLR2004", "F841"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["custom_components.smartir"]
+force-sort-within-sections = true
+combine-as-imports = true
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+check_untyped_defs = true
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+
+[tool.coverage.run]
+source = ["custom_components/smartir"]
+omit = ["tests/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+]

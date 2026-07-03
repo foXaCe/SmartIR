@@ -1,0 +1,63 @@
+name: 🐛 Bug Report
+description: Signaler un bug pour nous aider à améliorer SmartIR
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Merci de prendre le temps de signaler ce bug !
+        Avant de soumettre, vérifiez qu'il n'existe pas déjà une issue similaire.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description du bug
+      description: Une description claire et concise du problème
+    validations:
+      required: true
+
+  - type: input
+    id: ha-version
+    attributes:
+      label: Version Home Assistant
+      placeholder: "ex: 2024.1.0"
+    validations:
+      required: true
+
+  - type: input
+    id: smartir-version
+    attributes:
+      label: Version SmartIR
+      placeholder: "ex: 1.18.1"
+    validations:
+      required: true
+
+  - type: textarea
+    id: config
+    attributes:
+      label: Configuration YAML
+      description: Collez votre configuration SmartIR (sans informations sensibles)
+      render: yaml
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs de debug
+      description: |
+        Activez les logs de debug et collez-les ici :
+        ```yaml
+        logger:
+          logs:
+            custom_components.smartir: debug
+        ```
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Contexte supplémentaire
+      description: Ajoutez toute information pertinente (screenshots, etc.)

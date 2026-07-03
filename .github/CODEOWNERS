@@ -1,0 +1,17 @@
+# CODEOWNERS - SmartIR
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Les propriétaires par défaut pour tous les fichiers
+* @smartir-owners
+
+# Code principal de l'intégration
+/custom_components/smartir/ @smartir-owners
+
+# Configuration CI/CD
+/.github/ @smartir-owners
+
+# Tests
+/tests/ @smartir-owners
+
+# Documentation
+/README.md @smartir-owners
