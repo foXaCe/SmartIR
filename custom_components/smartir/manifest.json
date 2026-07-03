@@ -8,6 +8,7 @@
   "integration_type": "hub",
   "iot_class": "assumed_state",
   "issue_tracker": "https://github.com/foXaCe/SmartIR/issues",
+  "quality_scale": "gold",
   "requirements": ["aiofiles>=0.6.0"],
   "version": "1.18.2"
 }

@@ -1,0 +1,95 @@
+rules:
+  # Bronze
+  action-setup:
+    status: exempt
+    comment: SmartIR registers no service actions; all control is via entities.
+  appropriate-polling:
+    status: exempt
+    comment: >-
+      Command-only IR/RF integration (assumed_state). Only the media player
+      optionally polls an external power sensor; there is no device to poll.
+  brands: done
+  common-modules: done
+  config-flow-test-coverage: done
+  config-flow: done
+  dependency-transparency: done
+  docs-actions:
+    status: exempt
+    comment: No service actions.
+  docs-high-level-description: done
+  docs-installation-instructions: done
+  docs-removal-instructions: done
+  entity-event-setup: done
+  entity-unique-id: done
+  has-entity-name: done
+  runtime-data: done
+  test-before-configure: done
+  test-before-setup: done
+  unique-config-entry: done
+
+  # Silver
+  action-exceptions: done
+  config-entry-unloading: done
+  docs-configuration-parameters: done
+  docs-installation-parameters: done
+  entity-unavailable:
+    status: exempt
+    comment: >-
+      assumed_state, one-way IR/RF. There is no feedback channel to mark an
+      entity unavailable; the state is deduced from the last command.
+  integration-owner: done
+  log-when-unavailable:
+    status: exempt
+    comment: See entity-unavailable; there is no unavailable state to log.
+  parallel-updates: done
+  reauthentication-flow:
+    status: exempt
+    comment: No authentication is used.
+  test-coverage: done
+
+  # Gold
+  devices: done
+  diagnostics: done
+  discovery-update-info:
+    status: exempt
+    comment: IR/RF devices are not network-discoverable.
+  discovery:
+    status: exempt
+    comment: IR/RF devices cannot be auto-discovered.
+  docs-data-update: done
+  docs-examples: done
+  docs-known-limitations: done
+  docs-supported-devices: done
+  docs-supported-functions: done
+  docs-troubleshooting: done
+  docs-use-cases: done
+  dynamic-devices:
+    status: exempt
+    comment: One config entry per device; there is no hub enumerating sub-devices.
+  entity-category:
+    status: exempt
+    comment: Each entry exposes a single primary control entity, not a config/diagnostic one.
+  entity-device-class: done
+  entity-disabled-by-default:
+    status: exempt
+    comment: The single entity per entry is the primary control and is always useful.
+  entity-translations:
+    status: exempt
+    comment: Primary entities use the device name (_attr_name = None); there is no entity name to translate.
+  exception-translations: done
+  icon-translations: done
+  reconfiguration-flow: done
+  repair-issues: done
+  stale-devices:
+    status: exempt
+    comment: One config entry per device; removing the entry removes the device.
+
+  # Platinum
+  async-dependency: done
+  inject-websession:
+    status: exempt
+    comment: >-
+      No external API client library. HTTP (LOOKin, code downloads) uses Home
+      Assistant's shared aiohttp session via async_get_clientsession; all other
+      controllers go through HA service calls.
+  strict-typing: done

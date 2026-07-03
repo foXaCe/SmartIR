@@ -72,6 +72,31 @@ Device codes contain the IR commands for specific devices. Browse the codes bund
 
 If your device is not listed, you can create your own device code or request one via [GitHub issues][issues].
 
+## Custom codes (persistent)
+
+The device codes bundled with the integration live under
+`custom_components/smartir/codes/`, which **HACS overwrites on every update** — so
+a code you edit there is lost on the next update.
+
+To keep your own codes, place them in a dedicated directory under your Home
+Assistant **config** folder instead:
+
+```
+<config>/smartir_custom_codes/<platform>/<device_code>.json
+# e.g. <config>/smartir_custom_codes/climate/1293.json
+```
+
+- These files **survive SmartIR updates** (they are outside the integration folder).
+- They take **priority** over the bundled codes and the download: ideal for
+  correcting or completing a model's codes without forking the repository or
+  losing your changes on update.
+- They use the **same JSON format** as the bundled files (`manufacturer`,
+  `supportedController`, `commandsEncoding`, `commands`, …).
+
+Resolution order for a device code: **custom → bundled → downloaded**. Create the
+`smartir_custom_codes/<platform>/` folder yourself and drop your file in; nothing
+else is required.
+
 ## Configuration Options
 
 | Option | Description | Default |

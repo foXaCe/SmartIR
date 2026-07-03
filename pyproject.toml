@@ -20,10 +20,7 @@ select = [
     "C4",     # flake8-comprehensions
     "UP",     # pyupgrade
 ]
-ignore = [
-    "E402",   # Module level import not at top of file (needed for COMPONENT_ABS_DIR)
-    "E712",   # Comparison to True/False (legacy code style)
-]
+ignore = []
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["ARG001", "F841"]
@@ -34,11 +31,11 @@ force-sort-within-sections = true
 combine-as-imports = true
 
 [tool.mypy]
-python_version = "3.13"
-warn_return_any = true
-warn_unused_configs = true
-disallow_untyped_defs = false
-check_untyped_defs = true
+python_version = "3.14"
+strict = true
+# Home Assistant re-exports many symbols (ColorMode, MediaType, ...) without an
+# explicit __all__, so implicit re-export must stay permissive.
+implicit_reexport = true
 ignore_missing_imports = true
 disable_error_code = ["import-untyped"]
 
@@ -49,13 +46,7 @@ asyncio_default_fixture_loop_scope = "function"
 
 [tool.coverage.run]
 source = ["custom_components/smartir"]
-omit = [
-    "tests/*",
-    # Hub/bridge is a work-in-progress feature not wired into the config flow
-    # yet, so it is excluded from coverage until it ships.
-    "custom_components/smartir/hub.py",
-    "custom_components/smartir/sensor.py",
-]
+omit = ["tests/*"]
 
 [tool.coverage.report]
 exclude_lines = [
