@@ -1,7 +1,9 @@
 {
   "domain": "smartir",
   "name": "SmartIR",
-  "codeowners": ["@foXaCe"],
+  "codeowners": [
+    "@foXaCe"
+  ],
   "config_flow": true,
   "dependencies": [],
   "documentation": "https://github.com/foXaCe/SmartIR",
@@ -9,6 +11,8 @@
   "iot_class": "assumed_state",
   "issue_tracker": "https://github.com/foXaCe/SmartIR/issues",
   "quality_scale": "gold",
-  "requirements": ["aiofiles>=0.6.0"],
-  "version": "1.18.2"
+  "requirements": [
+    "aiofiles>=0.6.0"
+  ],
+  "version": "1.19.0"
 }
