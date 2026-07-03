@@ -1,6 +1,7 @@
 """IR Controller implementations for SmartIR."""
 
 from abc import ABC, abstractmethod
+import asyncio
 from base64 import b64encode
 import binascii
 import json
@@ -13,6 +14,11 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from . import Helper
 
 _LOGGER = logging.getLogger(__name__)
+
+# Retry policy for command delivery over unreliable IR/RF links (e.g. a
+# Broadlink RM mini over WiFi occasionally drops the outgoing UDP packet).
+SEND_ATTEMPTS = 3
+SEND_BACKOFF = 0.4
 
 BROADLINK_CONTROLLER = "Broadlink"
 XIAOMI_CONTROLLER = "Xiaomi"
@@ -49,7 +55,7 @@ class CommandConversionError(SmartIRControllerError):
 
 
 class CommandSendError(SmartIRControllerError):
-    """Raised when sending a command fails."""
+    """Raised when sending a command fails after all retries."""
 
 
 def get_controller(hass, controller, encoding, controller_data, delay):
@@ -62,7 +68,8 @@ def get_controller(hass, controller, encoding, controller_data, delay):
         ESPHOME_CONTROLLER: ESPHomeController,
     }
     try:
-        return controllers[controller](hass, controller, encoding, controller_data, delay)
+        # Every mapping value is a concrete subclass; mypy widens to the ABC.
+        return controllers[controller](hass, controller, encoding, controller_data, delay)  # type: ignore[abstract]
     except KeyError as err:
         raise UnsupportedControllerError(f"The controller '{controller}' is not supported.") from err
 
@@ -86,6 +93,34 @@ class AbstractController(ABC):
     @abstractmethod
     async def send(self, command):
         """Send a command."""
+
+    async def _async_call_with_retry(self, domain: str, service: str, service_data: dict) -> None:
+        """Call a Home Assistant service with blocking=True and retry on failure.
+
+        ``blocking=True`` propagates the service error (e.g. device unreachable)
+        back here so a transient WiFi hiccup can be retried instead of silently
+        dropping the command. Raises :class:`CommandSendError` if every attempt
+        fails.
+        """
+        last_err: Exception | None = None
+        for attempt in range(1, SEND_ATTEMPTS + 1):
+            try:
+                await self.hass.services.async_call(domain, service, service_data, blocking=True)
+                return
+            except Exception as err:
+                last_err = err
+                _LOGGER.warning(
+                    "SmartIR: %s.%s attempt %s/%s failed: %s",
+                    domain,
+                    service,
+                    attempt,
+                    SEND_ATTEMPTS,
+                    err,
+                )
+                if attempt < SEND_ATTEMPTS:
+                    await asyncio.sleep(SEND_BACKOFF * attempt)
+
+        raise CommandSendError(f"{domain}.{service} failed after {SEND_ATTEMPTS} attempts: {last_err}") from last_err
 
 
 class BroadlinkController(AbstractController):
@@ -129,7 +164,7 @@ class BroadlinkController(AbstractController):
             "delay_secs": self._delay,
         }
 
-        await self.hass.services.async_call("remote", "send_command", service_data)
+        await self._async_call_with_retry("remote", "send_command", service_data)
 
 
 class XiaomiController(AbstractController):
@@ -147,7 +182,7 @@ class XiaomiController(AbstractController):
             "command": self._encoding.lower() + ":" + command,
         }
 
-        await self.hass.services.async_call("remote", "send_command", service_data)
+        await self._async_call_with_retry("remote", "send_command", service_data)
 
 
 class MQTTController(AbstractController):
@@ -162,7 +197,7 @@ class MQTTController(AbstractController):
         """Send a command."""
         service_data = {"topic": self._controller_data, "payload": command}
 
-        await self.hass.services.async_call("mqtt", "publish", service_data)
+        await self._async_call_with_retry("mqtt", "publish", service_data)
 
 
 class LookinController(AbstractController):
@@ -174,18 +209,31 @@ class LookinController(AbstractController):
             raise UnsupportedEncodingError("The encoding is not supported by the LOOKin controller.")
 
     async def send(self, command):
-        """Send a command."""
+        """Send a command over HTTP with the same retry policy as the services."""
         encoding = self._encoding.lower().replace("pronto", "prontohex")
         url = f"http://{self._controller_data}/commands/ir/{encoding}/{command}"
+        session = async_get_clientsession(self.hass)
 
-        try:
-            session = async_get_clientsession(self.hass)
-            async with session.get(url, timeout=aiohttp.ClientTimeout(total=10)) as response:
-                if response.status != 200:
-                    _LOGGER.warning("LOOKin controller returned status %s", response.status)
-        except aiohttp.ClientError as err:
-            _LOGGER.error("Failed to send command to LOOKin controller: %s", err)
-            raise CommandSendError(f"Failed to send command to LOOKin controller: {err}") from err
+        last_err: Exception | None = None
+        for attempt in range(1, SEND_ATTEMPTS + 1):
+            try:
+                async with session.get(url, timeout=aiohttp.ClientTimeout(total=5)) as response:
+                    response.raise_for_status()
+                return
+            except aiohttp.ClientError as err:
+                last_err = err
+                _LOGGER.warning(
+                    "SmartIR: LOOKin attempt %s/%s failed: %s",
+                    attempt,
+                    SEND_ATTEMPTS,
+                    err,
+                )
+                if attempt < SEND_ATTEMPTS:
+                    await asyncio.sleep(SEND_BACKOFF * attempt)
+
+        raise CommandSendError(
+            f"Failed to send command to LOOKin controller after {SEND_ATTEMPTS} attempts: {last_err}"
+        ) from last_err
 
 
 class ESPHomeController(AbstractController):
@@ -200,4 +248,4 @@ class ESPHomeController(AbstractController):
         """Send a command."""
         service_data = {"command": json.loads(command)}
 
-        await self.hass.services.async_call("esphome", self._controller_data, service_data)
+        await self._async_call_with_retry("esphome", self._controller_data, service_data)
