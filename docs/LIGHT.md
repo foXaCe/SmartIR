@@ -2,6 +2,8 @@
     <a href="#"><img src="assets/smartir_light.png" width="350" alt="SmartIR light"></a>
 </p>
 
+> **ℹ️ Set up SmartIR from the Home Assistant UI** (Settings → Devices & Services → Add Integration → SmartIR). The `platform: smartir` YAML examples further down are **legacy and no longer supported**; they are kept only as a field reference. The device-code tables below remain valid.
+
 For this platform to work, we need a .json file containing all the necessary IR or RF commands.
 Find your device's brand code [here](LIGHT.md#available-codes-for-light-devices) and add the number in the `device_code` field. The component will download it to the correct folder.  If your device is not working, you will need to learn your own codes and place the .json file in `smartir/codes/light` subfolders. Please note that the `device_code` field only accepts positive numbers. The .json extension is not required.
 

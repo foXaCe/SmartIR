@@ -2,6 +2,8 @@
   <a href="#"><img src="assets/smartir_climate.png" width="350" alt="SmartIR Climate"></a>
 </p>
 
+> **ℹ️ Set up SmartIR from the Home Assistant UI** (Settings → Devices & Services → Add Integration → SmartIR). The `platform: smartir` YAML examples further down are **legacy and no longer supported**; they are kept only as a field reference. The device-code tables below remain valid.
+
 For this platform to work, we need a .json file containing all the necessary IR commands.
 Find your device's brand code [here](CLIMATE.md#available-codes-for-climate-devices) and add the number in the `device_code` field. If your device is not working, you will need to learn your own codes and place the Json file in `smartir/codes/climate` subfolders. ~~[Keite Trần](https://github.com/keitetran/BroadlinkIRTools) developed [an amazing web-based app](https://keitetran.github.io/BroadlinkIRTools/) for this job.~~
 _Please note that the device_code field only accepts positive numbers. The .json extension is not required._
