@@ -26,5 +26,3 @@ jobs:
       - uses: hacs/action@main
         with:
           category: integration
-          # SmartIR (fork) is not registered in the home-assistant/brands repo
-          ignore: brands
