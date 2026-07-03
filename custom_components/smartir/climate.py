@@ -23,7 +23,7 @@ import voluptuous as vol
 
 from . import COMPONENT_ABS_DIR, Helper
 from .const import CONF_CONTROLLER_TYPE, CONTROLLER_TYPES, DOMAIN, SmartIRConfigEntry
-from .controller import get_controller
+from .controller import CommandSendError, SmartIRControllerError, get_controller
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -362,6 +362,7 @@ class SmartIRClimate(ClimateEntity, RestoreEntity):
             _LOGGER.warning("The temperature value is out of min/max range")
             return
 
+        previous_temperature = self._target_temperature
         if self._precision == PRECISION_WHOLE:
             self._target_temperature = round(temperature)
         else:
@@ -371,38 +372,59 @@ class SmartIRClimate(ClimateEntity, RestoreEntity):
             await self.async_set_hvac_mode(hvac_mode)
             return
 
-        if not self._hvac_mode.lower() == HVACMode.OFF:
-            await self.send_command()
+        if self._hvac_mode.lower() != HVACMode.OFF:
+            try:
+                await self.send_command()
+            except SmartIRControllerError as err:
+                self._target_temperature = previous_temperature
+                _LOGGER.error("Failed to set temperature, reverting to %s: %s", previous_temperature, err)
 
         self.async_write_ha_state()
 
     async def async_set_hvac_mode(self, hvac_mode):
         """Set operation mode."""
+        previous_mode = self._hvac_mode
+        previous_last_on = self._last_on_operation
+
         self._hvac_mode = hvac_mode
-
-        if not hvac_mode == HVACMode.OFF:
+        if hvac_mode != HVACMode.OFF:
             self._last_on_operation = hvac_mode
-
-        # Update icon when mode changes
         self._attr_icon = self.icon
 
-        await self.send_command()
+        try:
+            await self.send_command()
+        except SmartIRControllerError as err:
+            self._hvac_mode = previous_mode
+            self._last_on_operation = previous_last_on
+            self._attr_icon = self.icon
+            _LOGGER.error("Failed to set HVAC mode, reverting to %s: %s", previous_mode, err)
+
         self.async_write_ha_state()
 
     async def async_set_fan_mode(self, fan_mode):
         """Set fan mode."""
+        previous_fan_mode = self._current_fan_mode
         self._current_fan_mode = fan_mode
 
-        if not self._hvac_mode.lower() == HVACMode.OFF:
-            await self.send_command()
+        if self._hvac_mode.lower() != HVACMode.OFF:
+            try:
+                await self.send_command()
+            except SmartIRControllerError as err:
+                self._current_fan_mode = previous_fan_mode
+                _LOGGER.error("Failed to set fan mode, reverting: %s", err)
         self.async_write_ha_state()
 
     async def async_set_swing_mode(self, swing_mode):
         """Set swing mode."""
+        previous_swing_mode = self._current_swing_mode
         self._current_swing_mode = swing_mode
 
-        if not self._hvac_mode.lower() == HVACMode.OFF:
-            await self.send_command()
+        if self._hvac_mode.lower() != HVACMode.OFF:
+            try:
+                await self.send_command()
+            except SmartIRControllerError as err:
+                self._current_swing_mode = previous_swing_mode
+                _LOGGER.error("Failed to set swing mode, reverting: %s", err)
         self.async_write_ha_state()
 
     async def async_turn_off(self):
@@ -417,31 +439,39 @@ class SmartIRClimate(ClimateEntity, RestoreEntity):
             await self.async_set_hvac_mode(self._operation_modes[1])
 
     async def send_command(self):
+        """Resolve and send the IR command for the current state.
+
+        Raises SmartIRControllerError (e.g. CommandSendError) when the command
+        cannot be delivered, so callers can revert optimistic state instead of
+        showing a state the device never reached.
+        """
         async with self._temp_lock:
+            self._on_by_remote = False
+            operation_mode = self._hvac_mode
+            fan_mode = self._current_fan_mode
+            swing_mode = self._current_swing_mode
+            target_temperature = f"{self._target_temperature:g}"
+
+            if operation_mode.lower() == HVACMode.OFF:
+                await self._controller.send(self._commands["off"])
+                return
+
+            if "on" in self._commands:
+                await self._controller.send(self._commands["on"])
+                await asyncio.sleep(self._delay)
+
             try:
-                self._on_by_remote = False
-                operation_mode = self._hvac_mode
-                fan_mode = self._current_fan_mode
-                swing_mode = self._current_swing_mode
-                target_temperature = f"{self._target_temperature:g}"
-
-                if operation_mode.lower() == HVACMode.OFF:
-                    await self._controller.send(self._commands["off"])
-                    return
-
-                if "on" in self._commands:
-                    await self._controller.send(self._commands["on"])
-                    await asyncio.sleep(self._delay)
-
-                if self._support_swing == True:
-                    await self._controller.send(
-                        self._commands[operation_mode][fan_mode][swing_mode][target_temperature]
-                    )
+                if self._support_swing:
+                    command = self._commands[operation_mode][fan_mode][swing_mode][target_temperature]
                 else:
-                    await self._controller.send(self._commands[operation_mode][fan_mode][target_temperature])
+                    command = self._commands[operation_mode][fan_mode][target_temperature]
+            except KeyError as err:
+                raise CommandSendError(
+                    f"No IR command for mode={operation_mode}, fan={fan_mode}, "
+                    f"swing={swing_mode}, temp={target_temperature}"
+                ) from err
 
-            except Exception as e:
-                _LOGGER.exception(e)
+            await self._controller.send(command)
 
     @callback
     async def _async_temp_sensor_changed(self, event: Event[EventStateChangedData]) -> None:
