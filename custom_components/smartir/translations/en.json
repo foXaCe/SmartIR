@@ -51,10 +51,21 @@
           "power_sensor": "Power Sensor",
           "power_sensor_restore_state": "Restore state based on power sensor"
         }
+      },
+      "reconfigure": {
+        "title": "Reconfigure SmartIR device",
+        "description": "Update the device code, controller entity or command delay.",
+        "data": {
+          "device_code": "Device Code",
+          "controller_data": "Controller",
+          "delay": "Command Delay (seconds)"
+        }
       }
     },
     "abort": {
-      "single_instance_allowed": "Only a single instance is allowed."
+      "single_instance_allowed": "Only a single instance is allowed.",
+      "already_configured": "This device is already configured.",
+      "reconfigure_successful": "Device reconfigured successfully."
     },
     "error": {
       "device_code_required": "Device code is required. Please enter a valid device code.",
@@ -65,7 +76,8 @@
       "invalid_ip_address": "Controller data must be a valid IP address",
       "invalid_mqtt_topic": "Controller data must be a valid MQTT topic",
       "invalid_service_name": "Controller data must be a valid service name",
-      "invalid_entity": "The specified entity is not valid"
+      "invalid_entity": "The specified entity is not valid",
+      "controller_not_found": "The selected controller entity was not found. Make sure it exists and is available."
     }
   },
   "options": {
@@ -102,39 +114,6 @@
         "lookin": "LOOK.in Remote",
         "esphome": "ESPHome User-defined service for remote transmitter",
         "mqtt": "MQTT Publish service"
-      }
-    }
-  },
-  "entity": {
-    "climate": {
-      "state_attributes": {
-        "fan_mode": {
-          "auto": "Auto",
-          "high": "High",
-          "med": "Medium",
-          "medium": "Medium",
-          "low": "Low",
-          "quiet": "Quiet",
-          "silent": "Silent",
-          "eco": "Eco"
-        },
-        "swing_mode": {
-          "off": "Off",
-          "vertical": "Vertical",
-          "horizontal": "Horizontal",
-          "both": "Both"
-        }
-      }
-    },
-    "fan": {
-      "state_attributes": {
-        "preset_mode": {
-          "auto": "Auto",
-          "sleep": "Sleep",
-          "normal": "Normal",
-          "nature": "Nature",
-          "turbo": "Turbo"
-        }
       }
     }
   }

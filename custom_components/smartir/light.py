@@ -85,9 +85,10 @@ async def async_setup_platform(
 
     if not os.path.exists(device_json_path):
         try:
-            codes_source = "https://raw.githubusercontent.com/smartHomeHub/SmartIR/master/codes/light/{}.json"
+            codes_source = "https://raw.githubusercontent.com/foXaCe/SmartIR/main/codes/light/{}.json"
 
             await Helper.downloader(
+                hass,
                 codes_source.format(device_code),
                 device_json_path,
             )
@@ -272,7 +273,7 @@ class SmartIRLight(LightEntity, RestoreEntity):
             "manufacturer": self._manufacturer,
             "model": ", ".join(self._supported_models) if self._supported_models else "Unknown",
             "sw_version": f"Device Code: {self._device_code}",
-            "configuration_url": f"https://github.com/smartHomeHub/SmartIR/blob/master/codes/light/{self._device_code}.json",
+            "configuration_url": f"https://github.com/foXaCe/SmartIR/blob/main/codes/light/{self._device_code}.json",
             "suggested_area": "Living Room",
             # "via_device": (DOMAIN, "smartir_hub")  # Temporary disabled
         }

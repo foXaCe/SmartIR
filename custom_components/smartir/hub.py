@@ -31,7 +31,7 @@ class SmartIRHub:
             manufacturer="SmartIR",
             model="Integration Hub",
             sw_version=VERSION,
-            configuration_url="https://github.com/smartHomeHub/SmartIR",
+            configuration_url="https://github.com/foXaCe/SmartIR",
             entry_type="service",
             suggested_area="System",
         )

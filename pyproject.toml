@@ -40,6 +40,7 @@ warn_unused_configs = true
 disallow_untyped_defs = false
 check_untyped_defs = true
 ignore_missing_imports = true
+disable_error_code = ["import-untyped"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -48,7 +49,13 @@ asyncio_default_fixture_loop_scope = "function"
 
 [tool.coverage.run]
 source = ["custom_components/smartir"]
-omit = ["tests/*"]
+omit = [
+    "tests/*",
+    # Hub/bridge is a work-in-progress feature not wired into the config flow
+    # yet, so it is excluded from coverage until it ships.
+    "custom_components/smartir/hub.py",
+    "custom_components/smartir/sensor.py",
+]
 
 [tool.coverage.report]
 exclude_lines = [
