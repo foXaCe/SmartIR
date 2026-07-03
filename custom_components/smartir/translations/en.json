@@ -47,7 +47,7 @@
           "controller_data": "Controller",
           "delay": "Command Delay (seconds)",
           "temperature_sensor": "Temperature Sensor",
-          "humidity_sensor": "Humidity Sensor", 
+          "humidity_sensor": "Humidity Sensor",
           "power_sensor": "Power Sensor",
           "power_sensor_restore_state": "Restore state based on power sensor"
         }
