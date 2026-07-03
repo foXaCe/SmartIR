@@ -1,6 +1,11 @@
 # Device-code data library is upstream data, not source — exclude from all hooks
 exclude: '^(codes/|custom_components/smartir/codes/)'
 
+ci:
+  # mypy's env (homeassistant-stubs) exceeds pre-commit.ci's 250 MiB free tier;
+  # it runs locally instead (see the mypy hook's stages: [manual]).
+  skip: [mypy]
+
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
