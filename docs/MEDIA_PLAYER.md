@@ -37,7 +37,7 @@ remote:
   - platform: xiaomi_miio
     host: 192.168.10.10
     token: YOUR_TOKEN
-    
+
 media_player:
   - platform: smartir
     name: Living room TV

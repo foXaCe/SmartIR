@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+CONFIG_DIR="${PWD}/config"
+
+if [ ! -d "${CONFIG_DIR}" ]; then
+    mkdir -p "${CONFIG_DIR}"
+    hass --config "${CONFIG_DIR}" --script ensure_config
+fi
+
+# Mount the custom component into the dev config
+mkdir -p "${CONFIG_DIR}/custom_components"
+ln -sfn "${PWD}/custom_components/smartir" "${CONFIG_DIR}/custom_components/smartir"
+
+hass --config "${CONFIG_DIR}" --debug

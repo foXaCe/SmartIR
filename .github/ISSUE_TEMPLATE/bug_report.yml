@@ -1,0 +1,90 @@
+name: 🐛 Bug Report
+description: Signaler un bug pour nous aider à améliorer SmartIR
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Merci de prendre le temps de signaler ce bug !
+        Avant de soumettre, vérifiez qu'il n'existe pas déjà une issue similaire.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description du bug
+      description: Une description claire et concise du problème, et ce qui devrait se passer à la place
+    validations:
+      required: true
+
+  - type: input
+    id: ha-version
+    attributes:
+      label: Version Home Assistant
+      placeholder: "ex : 2026.7.0"
+    validations:
+      required: true
+
+  - type: input
+    id: smartir-version
+    attributes:
+      label: Version SmartIR
+      placeholder: "ex : 1.18.1"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: install-method
+    attributes:
+      label: Méthode d'installation
+      options:
+        - HACS
+        - Manuelle
+        - Autre
+    validations:
+      required: true
+
+  - type: input
+    id: controller
+    attributes:
+      label: Contrôleur IR utilisé
+      placeholder: "ex : Broadlink RM4 Pro, ESPHome, MQTT…"
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Étapes pour reproduire
+      placeholder: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs de debug
+      description: |
+        Activez les logs de debug et collez-les ici :
+        ```yaml
+        logger:
+          logs:
+            custom_components.smartir: debug
+        ```
+      render: shell
+    validations:
+      required: true
+
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics
+      description: Paramètres → Appareils & Services → SmartIR → « ... » → Télécharger les diagnostics
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Contexte supplémentaire
+      description: Ajoutez toute information pertinente (screenshots, etc.)

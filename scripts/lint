@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+ruff check custom_components/smartir/ tests/
+ruff format --check custom_components/smartir/ tests/

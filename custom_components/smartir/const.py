@@ -1,5 +1,12 @@
 """Constants for the SmartIR integration."""
-import logging
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from homeassistant.config_entries import ConfigEntry
 
 DOMAIN = "smartir"
 VERSION = "1.18.1"
@@ -21,14 +28,34 @@ CONTROLLER_TYPES = {
     "xiaomi": "Xiaomi IR Remote (ChuangmiIr)",
     "lookin": "LOOK.in Remote",
     "esphome": "ESPHome User-defined service for remote transmitter",
-    "mqtt": "MQTT Publish service"
+    "mqtt": "MQTT Publish service",
 }
 
 DEVICE_TYPES = {
     "climate": "Climate (Air Conditioner)",
     "fan": "Fan",
     "media_player": "Media Player (TV/Audio)",
-    "light": "Light"
+    "light": "Light",
 }
 
-_LOGGER = logging.getLogger(__name__)
+
+@dataclass(slots=True)
+class SmartIRData:
+    """Runtime data for SmartIR integration."""
+
+    device_type: str
+    controller_type: str
+    name: str
+    device_code: int
+    controller_data: str
+    delay: float = 0.5
+    temperature_sensor: str | None = None
+    humidity_sensor: str | None = None
+    power_sensor: str | None = None
+    power_sensor_restore_state: bool = False
+    unique_id: str | None = None
+    extra: dict[str, Any] = field(default_factory=dict)
+
+
+# Type alias for ConfigEntry with SmartIR runtime data
+type SmartIRConfigEntry = ConfigEntry[SmartIRData]

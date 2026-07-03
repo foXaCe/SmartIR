@@ -1,0 +1,17 @@
+# CODEOWNERS - SmartIR
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owner for everything in the repo
+* @foXaCe
+
+# Integration code
+/custom_components/smartir/ @foXaCe
+
+# Translations
+/custom_components/smartir/translations/ @foXaCe
+
+# CI/CD & repo tooling
+/.github/ @foXaCe
+
+# Tests
+/tests/ @foXaCe

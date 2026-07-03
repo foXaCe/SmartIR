@@ -1,0 +1,38 @@
+name: ✨ Feature Request
+description: Suggérer une nouvelle fonctionnalité pour SmartIR
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Merci de suggérer une amélioration !
+        Vérifiez d'abord qu'elle n'a pas déjà été proposée.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problème lié
+      description: Votre demande est-elle liée à un problème ? Décrivez-le.
+      placeholder: "Je suis frustré quand..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Solution souhaitée
+      description: Décrivez clairement ce que vous voudriez voir implémenté
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considérées
+      description: Avez-vous envisagé d'autres solutions ?
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Contexte supplémentaire
+      description: Ajoutez toute information pertinente
