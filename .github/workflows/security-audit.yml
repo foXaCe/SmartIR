@@ -44,11 +44,19 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
+      # Scan the integration's runtime dependencies only (from manifest.json),
+      # matching the pip-audit job. The dev/test tooling is never shipped and
+      # pulls Home Assistant's own pinned transitive deps, which we cannot
+      # override; those are out of scope for a HACS integration's security audit.
+      - name: Collect runtime requirements
+        run: |
+          mkdir -p .osv-runtime
+          jq -r '.requirements[]' custom_components/smartir/manifest.json > .osv-runtime/requirements.txt
       - uses: google/osv-scanner-action/osv-scanner-action@v2.3.8
         with:
           scan-args: |-
             --recursive
-            ./
+            ./.osv-runtime
 
   dependency-review:
     name: Dependency review

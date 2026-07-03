@@ -3,3 +3,8 @@ pytest-asyncio>=0.23.0
 pytest-cov>=5.0.0
 pytest-homeassistant-custom-component>=0.13.0
 aiofiles>=0.6.0
+
+# Security floors for transitive dev/test dependencies (test-only, never shipped).
+# Kept at or above the fixed versions flagged by the security scanners.
+idna>=3.15
+pygments>=2.20.0
