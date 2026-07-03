@@ -1,17 +1,15 @@
 import asyncio
-import aiofiles
 import json
 import logging
 import os.path
 
-import voluptuous as vol
-
+import aiofiles
 from homeassistant.components.light import (
     ATTR_BRIGHTNESS,
     ATTR_COLOR_TEMP_KELVIN,
+    PLATFORM_SCHEMA,
     ColorMode,
     LightEntity,
-    PLATFORM_SCHEMA,
 )
 from homeassistant.const import (
     CONF_NAME,
@@ -19,14 +17,18 @@ from homeassistant.const import (
     STATE_ON,
 )
 from homeassistant.core import callback
-from homeassistant.helpers.event import async_track_state_change_event
 import homeassistant.helpers.config_validation as cv
+from homeassistant.helpers.event import async_track_state_change_event
 from homeassistant.helpers.restore_state import RestoreEntity
+import voluptuous as vol
+
 from . import COMPONENT_ABS_DIR, Helper
+from .const import CONF_CONTROLLER_TYPE, CONTROLLER_TYPES, DOMAIN, SmartIRConfigEntry
 from .controller import get_controller
-from .const import DOMAIN, CONF_CONTROLLER_TYPE, CONTROLLER_TYPES
 
 _LOGGER = logging.getLogger(__name__)
+
+PARALLEL_UPDATES = 0
 
 DEFAULT_NAME = "SmartIR Light"
 DEFAULT_DELAY = 0.5
@@ -57,9 +59,10 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
 )
 
 
-async def async_setup_entry(hass, entry, async_add_entities):
+async def async_setup_entry(hass, entry: SmartIRConfigEntry, async_add_entities) -> None:
     """Set up SmartIR light from a config entry."""
     from .helpers import async_setup_entry_platform
+
     await async_setup_entry_platform(hass, entry, async_add_entities, async_setup_platform)
 
 
@@ -82,11 +85,7 @@ async def async_setup_platform(
 
     if not os.path.exists(device_json_path):
         try:
-            codes_source = (
-                "https://raw.githubusercontent.com/"
-                "smartHomeHub/SmartIR/master/"
-                "codes/light/{}.json"
-            )
+            codes_source = "https://raw.githubusercontent.com/smartHomeHub/SmartIR/master/codes/light/{}.json"
 
             await Helper.downloader(
                 codes_source.format(device_code),
@@ -97,7 +96,7 @@ async def async_setup_platform(
             return
 
     try:
-        async with aiofiles.open(device_json_path, mode='r') as j:
+        async with aiofiles.open(device_json_path) as j:
             content = await j.read()
             device_data = json.loads(content)
     except Exception as e:
@@ -108,8 +107,8 @@ async def async_setup_platform(
     controller_type = config.get(CONF_CONTROLLER_TYPE)
     if controller_type and controller_type in CONTROLLER_TYPES:
         # Override the controller from JSON with the one from config entry
-        device_data['supportedController'] = CONTROLLER_TYPES[controller_type]
-    
+        device_data["supportedController"] = CONTROLLER_TYPES[controller_type]
+
     async_add_entities([SmartIRLight(hass, config, device_data)])
 
 
@@ -131,6 +130,10 @@ def closest_match(value, list):
 
 
 class SmartIRLight(LightEntity, RestoreEntity):
+    """SmartIR light entity for controlling IR lights."""
+
+    _attr_has_entity_name = True
+
     def __init__(self, hass, config, device_data):
         self.hass = hass
         self._unique_id = config.get(CONF_UNIQUE_ID)
@@ -156,16 +159,12 @@ class SmartIRLight(LightEntity, RestoreEntity):
         self._on_by_remote = False
         self._support_color_mode = ColorMode.UNKNOWN
 
-        if (
-            CMD_COLORMODE_COLDER in self._commands
-            and CMD_COLORMODE_WARMER in self._commands
-        ):
+        if CMD_COLORMODE_COLDER in self._commands and CMD_COLORMODE_WARMER in self._commands:
             self._colortemp = self.max_color_temp_kelvin
             self._support_color_mode = ColorMode.COLOR_TEMP
 
         if CMD_NIGHTLIGHT in self._commands or (
-            CMD_BRIGHTNESS_INCREASE in self._commands
-            and CMD_BRIGHTNESS_DECREASE in self._commands
+            CMD_BRIGHTNESS_INCREASE in self._commands and CMD_BRIGHTNESS_DECREASE in self._commands
         ):
             self._brightness = 100
             self._support_brightness = True
@@ -183,7 +182,7 @@ class SmartIRLight(LightEntity, RestoreEntity):
 
         # Set default icon attribute
         self._attr_icon = "mdi:lightbulb"
-        
+
         # Init the IR/RF controller
         self._controller = get_controller(
             self.hass,
@@ -206,9 +205,7 @@ class SmartIRLight(LightEntity, RestoreEntity):
                 self._colortemp = last_state.attributes[ATTR_COLOR_TEMP_KELVIN]
 
         if self._power_sensor:
-            async_track_state_change_event(
-                self.hass, self._power_sensor, self._async_power_sensor_changed
-            )
+            async_track_state_change_event(self.hass, self._power_sensor, self._async_power_sensor_changed)
 
     @property
     def unique_id(self):
@@ -302,10 +299,7 @@ class SmartIRLight(LightEntity, RestoreEntity):
             self._attr_icon = self.icon
             await self.send_command(CMD_POWER_ON)
 
-        if (
-            ATTR_COLOR_TEMP_KELVIN in params
-            and ColorMode.COLOR_TEMP == self._support_color_mode
-        ):
+        if ATTR_COLOR_TEMP_KELVIN in params and self._support_color_mode == ColorMode.COLOR_TEMP:
             target = params.get(ATTR_COLOR_TEMP_KELVIN)
             old_color_temp = closest_match(self._colortemp, self._colortemps)
             new_color_temp = closest_match(target, self._colortemps)
@@ -352,10 +346,7 @@ class SmartIRLight(LightEntity, RestoreEntity):
                     # If we are heading for the highest or lowest value,
                     # take the opportunity to resync by issuing enough
                     # commands to go the full range.
-                    if (
-                        new_brightness == len(self._brightnesses) - 1
-                        or new_brightness == 0
-                    ):
+                    if new_brightness == len(self._brightnesses) - 1 or new_brightness == 0:
                         steps = len(self._colortemps)
                     did_something = True
                     self._brightness = self._brightnesses[new_brightness]

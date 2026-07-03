@@ -1,17 +1,13 @@
 """Config flow for SmartIR integration."""
+
 import logging
-import voluptuous as vol
 
 from homeassistant import config_entries
 from homeassistant.core import callback
 from homeassistant.helpers import selector
-import homeassistant.helpers.config_validation as cv
+import voluptuous as vol
 
-from .const import (
-    DOMAIN, 
-    CONTROLLER_TYPES, 
-    DEVICE_TYPES
-)
+from .const import CONTROLLER_TYPES, DEVICE_TYPES, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -21,12 +17,12 @@ class SmartIRConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     VERSION = 1
     CONNECTION_CLASS = config_entries.CONN_CLASS_LOCAL_PUSH
-    
+
     @staticmethod
     @callback
     def async_get_options_flow(config_entry):
         """Get the options flow for this handler."""
-        return SmartIROptionsFlow(config_entry)
+        return SmartIROptionsFlow()
 
     def __init__(self):
         """Initialize the config flow."""
@@ -41,15 +37,17 @@ class SmartIRConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         return self.async_show_form(
             step_id="user",
-            data_schema=vol.Schema({
-                vol.Required("device_type"): selector.SelectSelector(
-                    selector.SelectSelectorConfig(
-                        options=["climate", "fan", "media_player", "light"],
-                        mode=selector.SelectSelectorMode.DROPDOWN,
-                        translation_key="device_type"
+            data_schema=vol.Schema(
+                {
+                    vol.Required("device_type"): selector.SelectSelector(
+                        selector.SelectSelectorConfig(
+                            options=["climate", "fan", "media_player", "light"],
+                            mode=selector.SelectSelectorMode.DROPDOWN,
+                            translation_key="device_type",
+                        )
                     )
-                )
-            }),
+                }
+            ),
         )
 
     async def async_step_controller(self, user_input=None):
@@ -60,31 +58,35 @@ class SmartIRConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             if not self.controller_type:
                 return self.async_show_form(
                     step_id="controller",
-                    data_schema=vol.Schema({
-                        vol.Required("controller"): selector.SelectSelector(
-                            selector.SelectSelectorConfig(
-                                options=["broadlink", "xiaomi", "lookin", "esphome", "mqtt"],
-                                mode=selector.SelectSelectorMode.DROPDOWN,
-                                translation_key="controller"
+                    data_schema=vol.Schema(
+                        {
+                            vol.Required("controller"): selector.SelectSelector(
+                                selector.SelectSelectorConfig(
+                                    options=["broadlink", "xiaomi", "lookin", "esphome", "mqtt"],
+                                    mode=selector.SelectSelectorMode.DROPDOWN,
+                                    translation_key="controller",
+                                )
                             )
-                        )
-                    }),
-                    errors={"controller": "Controller selection required"}
+                        }
+                    ),
+                    errors={"controller": "Controller selection required"},
                 )
 
             return await self.async_step_device_config()
 
         return self.async_show_form(
-            step_id="controller", 
-            data_schema=vol.Schema({
-                vol.Required("controller"): selector.SelectSelector(
-                    selector.SelectSelectorConfig(
-                        options=["broadlink", "xiaomi", "lookin", "esphome", "mqtt"],
-                        mode=selector.SelectSelectorMode.DROPDOWN,
-                        translation_key="controller"
+            step_id="controller",
+            data_schema=vol.Schema(
+                {
+                    vol.Required("controller"): selector.SelectSelector(
+                        selector.SelectSelectorConfig(
+                            options=["broadlink", "xiaomi", "lookin", "esphome", "mqtt"],
+                            mode=selector.SelectSelectorMode.DROPDOWN,
+                            translation_key="controller",
+                        )
                     )
-                )
-            }),
+                }
+            ),
         )
 
     async def async_step_device_config(self, user_input=None):
@@ -131,50 +133,35 @@ class SmartIRConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             vol.Optional("name"): str,
             vol.Required("device_code"): vol.All(int, vol.Range(min=1)),
             vol.Required("controller_data"): selector.EntitySelector(
-                selector.EntitySelectorConfig(
-                    domain="remote",
-                    multiple=False
-                )
+                selector.EntitySelectorConfig(domain="remote", multiple=False)
             ),
             vol.Optional("delay", default=0.5): vol.All(vol.Coerce(float), vol.Range(min=0.1, max=10.0)),
         }
 
         # Add device-specific sensors
         if self.device_type == "climate":
-            schema_dict.update({
-                vol.Optional("temperature_sensor"): selector.EntitySelector(
-                    selector.EntitySelectorConfig(
-                        domain="sensor",
-                        device_class="temperature",
-                        multiple=False
-                    )
-                ),
-                vol.Optional("humidity_sensor"): selector.EntitySelector(
-                    selector.EntitySelectorConfig(
-                        domain="sensor", 
-                        device_class="humidity",
-                        multiple=False
-                    )
-                ),
-                vol.Optional("power_sensor"): selector.EntitySelector(
-                    selector.EntitySelectorConfig(
-                        domain="sensor",
-                        device_class="power",
-                        multiple=False
-                    )
-                ),
-                vol.Optional("power_sensor_restore_state", default=False): bool,
-            })
+            schema_dict.update(
+                {
+                    vol.Optional("temperature_sensor"): selector.EntitySelector(
+                        selector.EntitySelectorConfig(domain="sensor", device_class="temperature", multiple=False)
+                    ),
+                    vol.Optional("humidity_sensor"): selector.EntitySelector(
+                        selector.EntitySelectorConfig(domain="sensor", device_class="humidity", multiple=False)
+                    ),
+                    vol.Optional("power_sensor"): selector.EntitySelector(
+                        selector.EntitySelectorConfig(domain="sensor", device_class="power", multiple=False)
+                    ),
+                    vol.Optional("power_sensor_restore_state", default=False): bool,
+                }
+            )
         elif self.device_type in ["fan", "light", "media_player"]:
-            schema_dict.update({
-                vol.Optional("power_sensor"): selector.EntitySelector(
-                    selector.EntitySelectorConfig(
-                        domain="sensor",
-                        device_class="power", 
-                        multiple=False
-                    )
-                ),
-            })
+            schema_dict.update(
+                {
+                    vol.Optional("power_sensor"): selector.EntitySelector(
+                        selector.EntitySelectorConfig(domain="sensor", device_class="power", multiple=False)
+                    ),
+                }
+            )
 
         # Generate help URL based on device type
         device_code_help_url = f"https://github.com/smartHomeHub/SmartIR/tree/master/codes/{self.device_type}"
@@ -183,22 +170,22 @@ class SmartIRConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             step_id="device_config",
             data_schema=vol.Schema(schema_dict),
             errors=errors,
-            description_placeholders={
-                "device_code_help_url": device_code_help_url
-            }
+            description_placeholders={"device_code_help_url": device_code_help_url},
         )
 
 
 class SmartIROptionsFlow(config_entries.OptionsFlow):
     """Handle options flow for SmartIR."""
 
-    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
+    def __init__(self) -> None:
         """Initialize options flow."""
-        self.config_entry = config_entry
-        self.device_type = config_entry.data.get("device_type")
-        
+        self.device_type = None
+
     async def async_step_init(self, user_input=None):
         """Manage the SmartIR options."""
+        if self.device_type is None:
+            self.device_type = self.config_entry.data.get("device_type")
+
         if user_input is not None:
             # Update the config entry with new options
             return self.async_create_entry(title="", data=user_input)
@@ -206,90 +193,88 @@ class SmartIROptionsFlow(config_entries.OptionsFlow):
         # Get current configuration
         current_config = self.config_entry.data
         device_type = current_config.get("device_type")
-        
+
         # Build schema based on current configuration and device type
         schema_dict = {
             vol.Optional("device_code", default=current_config.get("device_code", 1)): vol.All(int, vol.Range(min=1)),
-            vol.Optional("delay", default=current_config.get("delay", 0.5)): vol.All(vol.Coerce(float), vol.Range(min=0.1, max=10.0)),
+            vol.Optional("delay", default=current_config.get("delay", 0.5)): vol.All(
+                vol.Coerce(float), vol.Range(min=0.1, max=10.0)
+            ),
         }
-        
+
         # Handle name separately to allow empty values
         if current_config.get("name"):
             schema_dict[vol.Optional("name", default=current_config.get("name"))] = str
         else:
             schema_dict[vol.Optional("name")] = str
-        
+
         # Handle controller_data separately to avoid empty string default
         if current_config.get("controller_data"):
-            schema_dict[vol.Optional("controller_data", default=current_config.get("controller_data"))] = selector.EntitySelector(
-                selector.EntitySelectorConfig(
-                    domain="remote",
-                    multiple=False
-                )
+            schema_dict[vol.Optional("controller_data", default=current_config.get("controller_data"))] = (
+                selector.EntitySelector(selector.EntitySelectorConfig(domain="remote", multiple=False))
             )
         else:
             schema_dict[vol.Optional("controller_data")] = selector.EntitySelector(
-                selector.EntitySelectorConfig(
-                    domain="remote",
-                    multiple=False
-                )
+                selector.EntitySelectorConfig(domain="remote", multiple=False)
             )
 
         # Add device-specific options
         if device_type == "climate":
             # Only add default if entity exists in current config
-            temp_sensor_config = {
-                "domain": "sensor",
-                "device_class": "temperature",
-                "multiple": False
-            }
-            humidity_sensor_config = {
-                "domain": "sensor", 
-                "device_class": "humidity",
-                "multiple": False
-            }
-            power_sensor_config = {
-                "domain": "sensor",
-                "device_class": "power",
-                "multiple": False
-            }
-            
+            temp_sensor_config = {"domain": "sensor", "device_class": "temperature", "multiple": False}
+            humidity_sensor_config = {"domain": "sensor", "device_class": "humidity", "multiple": False}
+            power_sensor_config = {"domain": "sensor", "device_class": "power", "multiple": False}
+
             # Build the schema dynamically based on existing values
             if current_config.get("temperature_sensor"):
-                schema_dict[vol.Optional("temperature_sensor", default=current_config.get("temperature_sensor"))] = selector.EntitySelector(selector.EntitySelectorConfig(**temp_sensor_config))
+                schema_dict[vol.Optional("temperature_sensor", default=current_config.get("temperature_sensor"))] = (
+                    selector.EntitySelector(selector.EntitySelectorConfig(**temp_sensor_config))
+                )
             else:
-                schema_dict[vol.Optional("temperature_sensor")] = selector.EntitySelector(selector.EntitySelectorConfig(**temp_sensor_config))
-                
+                schema_dict[vol.Optional("temperature_sensor")] = selector.EntitySelector(
+                    selector.EntitySelectorConfig(**temp_sensor_config)
+                )
+
             if current_config.get("humidity_sensor"):
-                schema_dict[vol.Optional("humidity_sensor", default=current_config.get("humidity_sensor"))] = selector.EntitySelector(selector.EntitySelectorConfig(**humidity_sensor_config))
+                schema_dict[vol.Optional("humidity_sensor", default=current_config.get("humidity_sensor"))] = (
+                    selector.EntitySelector(selector.EntitySelectorConfig(**humidity_sensor_config))
+                )
             else:
-                schema_dict[vol.Optional("humidity_sensor")] = selector.EntitySelector(selector.EntitySelectorConfig(**humidity_sensor_config))
-                
+                schema_dict[vol.Optional("humidity_sensor")] = selector.EntitySelector(
+                    selector.EntitySelectorConfig(**humidity_sensor_config)
+                )
+
             if current_config.get("power_sensor"):
-                schema_dict[vol.Optional("power_sensor", default=current_config.get("power_sensor"))] = selector.EntitySelector(selector.EntitySelectorConfig(**power_sensor_config))
+                schema_dict[vol.Optional("power_sensor", default=current_config.get("power_sensor"))] = (
+                    selector.EntitySelector(selector.EntitySelectorConfig(**power_sensor_config))
+                )
             else:
-                schema_dict[vol.Optional("power_sensor")] = selector.EntitySelector(selector.EntitySelectorConfig(**power_sensor_config))
-                
-            schema_dict[vol.Optional("power_sensor_restore_state", default=current_config.get("power_sensor_restore_state", False))] = bool
-            
+                schema_dict[vol.Optional("power_sensor")] = selector.EntitySelector(
+                    selector.EntitySelectorConfig(**power_sensor_config)
+                )
+
+            schema_dict[
+                vol.Optional(
+                    "power_sensor_restore_state", default=current_config.get("power_sensor_restore_state", False)
+                )
+            ] = bool
+
         elif device_type in ["fan", "light", "media_player"]:
-            power_sensor_config = {
-                "domain": "sensor",
-                "device_class": "power", 
-                "multiple": False
-            }
-            
+            power_sensor_config = {"domain": "sensor", "device_class": "power", "multiple": False}
+
             if current_config.get("power_sensor"):
-                schema_dict[vol.Optional("power_sensor", default=current_config.get("power_sensor"))] = selector.EntitySelector(selector.EntitySelectorConfig(**power_sensor_config))
+                schema_dict[vol.Optional("power_sensor", default=current_config.get("power_sensor"))] = (
+                    selector.EntitySelector(selector.EntitySelectorConfig(**power_sensor_config))
+                )
             else:
-                schema_dict[vol.Optional("power_sensor")] = selector.EntitySelector(selector.EntitySelectorConfig(**power_sensor_config))
+                schema_dict[vol.Optional("power_sensor")] = selector.EntitySelector(
+                    selector.EntitySelectorConfig(**power_sensor_config)
+                )
 
         device_code_help_url = f"https://github.com/smartHomeHub/SmartIR/tree/master/codes/{device_type}"
 
         return self.async_show_form(
             step_id="init",
             data_schema=vol.Schema(schema_dict),
-            description_placeholders={
-                "device_code_help_url": device_code_help_url
-            }
+            description_placeholders={"device_code_help_url": device_code_help_url},
         )

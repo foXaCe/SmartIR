@@ -8,8 +8,23 @@
           "device_type": "Type d'appareil"
         }
       },
+      "migration": {
+        "title": "Migration SmartIR",
+        "description": "Nous avons trouvé des appareils SmartIR existants dans votre configuration.yaml. Souhaitez-vous les migrer vers le nouveau config flow ?",
+        "data": {
+          "migrate": "Migrer les appareils existants",
+          "devices": "Sélectionner les appareils à migrer"
+        }
+      },
+      "migration_complete": {
+        "title": "Migration terminée",
+        "description": "Les appareils suivants ont été migrés avec succès :\n\n{devices}\n\nSouhaitez-vous supprimer l'ancienne configuration YAML de votre fichier configuration.yaml ?",
+        "data": {
+          "remove_yaml": "Afficher les instructions pour supprimer la configuration YAML"
+        }
+      },
       "device_type": {
-        "title": "Sélection du type d'appareil", 
+        "title": "Sélection du type d'appareil",
         "description": "Sélectionnez le type d'appareil que vous voulez contrôler",
         "data": {
           "device_type": "Type d'appareil"
