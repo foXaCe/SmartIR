@@ -52,7 +52,7 @@ jobs:
         run: |
           mkdir -p .osv-runtime
           jq -r '.requirements[]' custom_components/smartir/manifest.json > .osv-runtime/requirements.txt
-      - uses: google/osv-scanner-action/osv-scanner-action@v2.5.0
+      - uses: google/osv-scanner-action/osv-scanner-action@v2.5.1
         with:
           scan-args: |-
             --recursive
