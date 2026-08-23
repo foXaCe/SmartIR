@@ -1,6 +1,6 @@
 [project]
 name = "smartir"
-version = "1.19.0"
+version = "1.19.1"
 description = "SmartIR - Control IR/RF devices via Home Assistant"
 readme = "README.md"
 license = { text = "MIT" }
