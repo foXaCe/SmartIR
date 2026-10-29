@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.19.2](https://github.com/foXaCe/SmartIR/compare/smartir-v1.19.1...smartir-v1.19.2) (2026-10-29)
+
+
+### Fixed
+
+* **climate:** use native temperature API from Home Assistant 2026.11 ([#46](https://github.com/foXaCe/SmartIR/issues/46)) ([6f9fce5](https://github.com/foXaCe/SmartIR/commit/6f9fce5724dee4dbd0513d26972d1e55f255003a))
+
 ## [1.19.1](https://github.com/foXaCe/SmartIR/compare/smartir-v1.19.0...smartir-v1.19.1) (2026-08-23)
 
 
