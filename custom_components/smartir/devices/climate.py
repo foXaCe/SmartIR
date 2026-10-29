@@ -33,6 +33,11 @@ SUPPORT_FLAGS = (
 )
 
 
+# Home Assistant 2026.11 renamed the temperature API to native_*; older
+# versions only read the legacy names, so alias them there.
+_HAS_NATIVE = hasattr(ClimateEntity, "native_temperature_unit")
+
+
 class SmartIRClimate(SmartIREntity, ClimateEntity):
     """SmartIR climate entity for controlling IR air conditioners."""
 
@@ -122,7 +127,7 @@ class SmartIRClimate(SmartIREntity, ClimateEntity):
         }.get(self._hvac_mode, "mdi:thermostat")
 
     @property
-    def temperature_unit(self) -> str:
+    def native_temperature_unit(self) -> str:
         """Return the temperature unit."""
         return self._unit
 
@@ -137,7 +142,7 @@ class SmartIRClimate(SmartIREntity, ClimateEntity):
         return self._max_temperature
 
     @property
-    def target_temperature(self) -> float:
+    def native_target_temperature(self) -> float:
         """Return the target temperature."""
         return self._target_temperature
 
@@ -182,9 +187,14 @@ class SmartIRClimate(SmartIREntity, ClimateEntity):
         return self._current_swing_mode
 
     @property
-    def current_temperature(self) -> float | None:
+    def native_current_temperature(self) -> float | None:
         """Return the current temperature from the linked sensor."""
         return self._current_temperature
+
+    if not _HAS_NATIVE:  # Home Assistant < 2026.11
+        temperature_unit = property(lambda self: self.native_temperature_unit)
+        target_temperature = property(lambda self: self.native_target_temperature)
+        current_temperature = property(lambda self: self.native_current_temperature)
 
     @property
     def current_humidity(self) -> float | None:

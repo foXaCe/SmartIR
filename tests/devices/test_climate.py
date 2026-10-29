@@ -13,6 +13,7 @@ import pytest
 
 from custom_components.smartir.api.exceptions import CommandSendError, SmartIRControllerError
 from custom_components.smartir.const import SmartIRData
+from custom_components.smartir.devices import climate as climate_module
 from custom_components.smartir.devices.climate import SmartIRClimate
 
 
@@ -39,9 +40,30 @@ class TestInit:
         """min/max temperature and the temperature unit are read from the device data."""
         assert climate.min_temp == 16
         assert climate.max_temp == 30
-        assert climate.temperature_unit == climate.hass.config.units.temperature_unit
-        assert climate.target_temperature == 16
+        assert climate.native_temperature_unit == climate.hass.config.units.temperature_unit
+        assert climate.native_target_temperature == 16
         assert climate.target_temperature_step == 1
+
+    def test_temperature_api_without_deprecation(
+        self, climate: SmartIRClimate, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """Temperatures are served under the names the running HA reads, without deprecation warnings."""
+        climate._current_temperature = 21.5
+        climate._target_temperature = 24
+        if climate_module._HAS_NATIVE:
+            names = ("native_temperature_unit", "native_current_temperature", "native_target_temperature")
+            assert "temperature_unit" not in vars(SmartIRClimate)
+        else:
+            names = ("temperature_unit", "current_temperature", "target_temperature")
+        unit, current, target = (getattr(climate, name) for name in names)
+        assert unit == climate.hass.config.units.temperature_unit
+        assert current == 21.5
+        assert target == 24
+        assert climate.min_temp == 16
+        assert climate.max_temp == 30
+        assert climate.state_attributes["temperature"] == 24
+        assert climate.state_attributes["current_temperature"] == 21.5
+        assert "deprecated" not in caplog.text
 
     def test_hvac_modes_prepends_off(self, climate: SmartIRClimate) -> None:
         """OFF is always prepended to the operation modes read from the device data."""
@@ -149,24 +171,24 @@ class TestSetTemperature:
     async def test_valid_temperature(self, climate: SmartIRClimate, mock_controller: MagicMock) -> None:
         """A valid temperature is applied and a command sent."""
         await climate.async_set_temperature(temperature=24)
-        assert climate.target_temperature == 24
+        assert climate.native_target_temperature == 24
         assert mock_controller.send.called
 
     async def test_rounds_to_whole_with_precision_one(self, climate: SmartIRClimate) -> None:
         """precision=1 rounds the requested temperature to the nearest whole degree."""
         await climate.async_set_temperature(temperature=23.7)
-        assert climate.target_temperature == 24
+        assert climate.native_target_temperature == 24
 
     async def test_below_min_ignored(self, climate: SmartIRClimate, mock_controller: MagicMock) -> None:
         """A temperature below the minimum is ignored."""
         await climate.async_set_temperature(temperature=10)
-        assert climate.target_temperature == 16
+        assert climate.native_target_temperature == 16
         mock_controller.send.assert_not_called()
 
     async def test_above_max_ignored(self, climate: SmartIRClimate, mock_controller: MagicMock) -> None:
         """A temperature above the maximum is ignored."""
         await climate.async_set_temperature(temperature=35)
-        assert climate.target_temperature == 16
+        assert climate.native_target_temperature == 16
         mock_controller.send.assert_not_called()
 
     async def test_none_ignored(self, climate: SmartIRClimate, mock_controller: MagicMock) -> None:
@@ -177,14 +199,14 @@ class TestSetTemperature:
     async def test_with_hvac_mode_delegates(self, climate: SmartIRClimate) -> None:
         """Providing hvac_mode alongside temperature also switches the mode."""
         await climate.async_set_temperature(temperature=24, hvac_mode=HVACMode.HEAT)
-        assert climate.target_temperature == 24
+        assert climate.native_target_temperature == 24
         assert climate.hvac_mode == HVACMode.HEAT
 
     async def test_off_mode_does_not_send_command(self, climate: SmartIRClimate, mock_controller: MagicMock) -> None:
         """Setting a temperature while off updates the target but sends nothing."""
         climate._hvac_mode = HVACMode.OFF
         await climate.async_set_temperature(temperature=20)
-        assert climate.target_temperature == 20
+        assert climate.native_target_temperature == 20
         mock_controller.send.assert_not_called()
 
     async def test_controller_error_reverts_temperature(
@@ -194,7 +216,7 @@ class TestSetTemperature:
         mock_controller.send.side_effect = SmartIRControllerError("no link")
         with pytest.raises(HomeAssistantError):
             await climate.async_set_temperature(temperature=24)
-        assert climate.target_temperature == 16
+        assert climate.native_target_temperature == 16
 
 
 class TestSetHvacMode:
@@ -382,7 +404,7 @@ class TestSensorHandling:
         """A valid numeric state updates current_temperature."""
         state = MagicMock(state="22.5")
         climate._async_update_temp(state)
-        assert climate.current_temperature == 22.5
+        assert climate.native_current_temperature == 22.5
 
     def test_update_temp_unknown(self, climate: SmartIRClimate) -> None:
         """An unknown state is ignored."""
@@ -419,7 +441,7 @@ class TestSensorHandling:
         event = MagicMock()
         event.data = {"new_state": MagicMock(state="19.5")}
         climate._async_temp_sensor_changed(event)
-        assert climate.current_temperature == 19.5
+        assert climate.native_current_temperature == 19.5
         climate.async_write_ha_state.assert_called_once()
 
     async def test_temp_sensor_changed_event_none_is_noop(self, climate: SmartIRClimate) -> None:
@@ -525,7 +547,7 @@ class TestAddedToHass:
         assert climate.hvac_mode == HVACMode.HEAT
         assert climate.fan_mode == "high"
         assert climate.swing_mode == "vertical"
-        assert climate.target_temperature == 25
+        assert climate.native_target_temperature == 25
         assert climate.last_on_operation == HVACMode.HEAT
 
     async def test_restores_invalid_hvac_mode_as_off(self, climate: SmartIRClimate) -> None:
@@ -567,7 +589,7 @@ class TestAddedToHass:
 
         await climate.async_added_to_hass()
 
-        assert climate.current_temperature == 21.3
+        assert climate.native_current_temperature == 21.3
 
     async def test_tracks_humidity_sensor_and_seeds_initial_value(
         self, hass: HomeAssistant, make_smartir_data, mock_climate_device_data, mock_controller
